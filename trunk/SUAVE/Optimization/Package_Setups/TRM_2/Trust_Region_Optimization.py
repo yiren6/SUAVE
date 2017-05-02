@@ -59,7 +59,10 @@ class Trust_Region_Optimization(Data):
         # History writing
         f_out = open('TRM_hist.txt','w')
         import datetime
-        f_out.write(str(datetime.datetime.now())+'\n')        
+        f_out.write(str(datetime.datetime.now())+'\n')
+        self.x0_hist = []
+        self.x1_hist = []
+        self.obj_hi  = []
     
         # Pull out the constraints and scale them
         bnd_constraints = help_fun.scale_const_bnds(con)
@@ -129,7 +132,9 @@ class Trust_Region_Optimization(Data):
             f_out.write('Iteration ----- ' + str(iterations) + '\n')
             f_out.write('x0_center: ' + str(x[0]) + '\n')
             f_out.write('x1_center: ' + str(x[1]) + '\n')
-            f_out.write('tr size  : ' + str(tr.size) + '\n')            
+            f_out.write('tr size  : ' + str(tr.size) + '\n')   
+            self.x0_hist.append(x[0])
+            self.x1_hist.append(x[1])
             
             xOpt = np.zeros(np.shape(x))
             fOpt = None
@@ -286,6 +291,7 @@ class Trust_Region_Optimization(Data):
             # hard convergence check
             if (success_indicator==1 and np.sum(np.isclose(xOpt_lo,x,rtol=1e-14,atol=1e-12))==len(x)):
                 print 'Hard convergence reached'
+                f_out.write('hard convergence reached')
                 f_out.close()
                 return outputs
             print 'fOpt_lo = ', fOpt_lo
@@ -360,6 +366,7 @@ class Trust_Region_Optimization(Data):
                     break
                 ind1 += 1
             if( converged and len(self.relative_difference_history) >= tr.soft_convergence_limit):
+                f_out.write('soft convergence reached')
                 f_out.close()
                 print 'Soft convergence reached'
                 return outputs     
@@ -405,6 +412,7 @@ class Trust_Region_Optimization(Data):
             # Terminate if trust region too small
             if( tr.size < tr.minimum_size ):
                 print 'Trust region too small'
+                f_out.write('tr too small')
                 f_out.close()
                 return -1
             
@@ -412,6 +420,7 @@ class Trust_Region_Optimization(Data):
             if( success_indicator == 13 and tr_action < 3 and \
                 np.sum(np.isclose(xOpt,x,rtol=1e-15,atol=1e-14)) == len(x) ):
                 print 'Solution infeasible, no improvement can be made'
+                f_out.write('Solution infeasible, no improvement can be made')
                 f_out.close()
                 return -1       
             
@@ -419,7 +428,8 @@ class Trust_Region_Optimization(Data):
             f_out.write('x0 opt   : ' + str(xOpt_lo[0]) + '\n')
             f_out.write('x1 opt   : ' + str(xOpt_lo[1]) + '\n')
             f_out.write('low obj  : ' + str(fOpt_lo[0][0]) + '\n')
-            f_out.write('hi  obj  : ' + str(fOpt_hi[0]) + '\n')              
+            f_out.write('hi  obj  : ' + str(fOpt_hi[0]) + '\n')
+            self.obj_hi.append(fOpt_hi[0])
             
             # Update Trust Region Center
             if accepted == 1:
@@ -435,6 +445,7 @@ class Trust_Region_Optimization(Data):
             print fOpt_hi
             aa = 0
         
+        f_out.write('Max iteration limit reached')
         f_out.close()
         print 'Max iteration limit reached'
         return (fOpt,xOpt)
