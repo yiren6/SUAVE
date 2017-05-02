@@ -90,16 +90,19 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             res = evaluate_model(problem,x,scaled_constraints)
             f[level-1,ii]  = res[0]    # objective value
             g[level-1,ii]  = res[1]    # constraints vector
+            
+    fOpt_min = 10000.
+    xOpt_min = x*1.
     
     for kk in range(max_iterations):
         # Build objective surrogate
         f_diff = f[1,:] - f[0,:]
-        f_additive_surrogate_base = gaussian_process.GaussianProcess()
+        f_additive_surrogate_base = gaussian_process.GaussianProcessRegressor()
         f_additive_surrogate = f_additive_surrogate_base.fit(x_samples, f_diff)     
         
         # Build constraint surrogate
         g_diff = g[1,:] - g[0,:]
-        g_additive_surrogate_base = gaussian_process.GaussianProcess()
+        g_additive_surrogate_base = gaussian_process.GaussianProcessRegressor()
         g_additive_surrogate = g_additive_surrogate_base.fit(x_samples, g_diff)     
         
         # Plot Surrogates -------------------------------------------------------
@@ -138,7 +141,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             opt_prob.addObj('f',100) 
         for ii in xrange(0,len(inp)):
             vartype = 'c'
-            opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x[ii])    
+            opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=xOpt_min[ii])    
         for ii in xrange(0,len(con)):
             if con[ii][1]=='<':
                 opt_prob.addCon(name[ii], type='i', upper=edge[ii])
@@ -179,6 +182,10 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             f[level-1][-1] = res[0]
             g[level-1][-1] = res[1]
             
+        if fOpt < fOpt_min:
+            fOpt_min = fOpt*1.
+            xOpt_min = xOpt*1.
+            
         # History writing
         f_out.write('Iteration: ' + str(kk+1) + '\n')
         f_out.write('x0      : ' + str(xOpt[0]) + '\n')
@@ -190,6 +197,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         pass
     
     np.save('x_samples.npy',x_samples)
+    np.save('all_data.npy',np.vstack([x_samples[:,0],x_samples[:,1],f_diff,f[0,:],f[1,:]]))
     f_out.close()
     print f[1][-1],xOpt
     return (f[1][-1],xOpt)
