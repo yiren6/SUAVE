@@ -94,6 +94,8 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
     fOpt_min = 10000.
     xOpt_min = x*1.
     
+    converged = False
+    
     for kk in range(max_iterations):
         # Build objective surrogate
         f_diff = f[1,:] - f[0,:]
@@ -182,25 +184,36 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             f[level-1][-1] = res[0]
             g[level-1][-1] = res[1]
             
-        if fOpt < fOpt_min:
-            fOpt_min = fOpt*1.
-            xOpt_min = xOpt*1.
-            
         # History writing
         f_out.write('Iteration: ' + str(kk+1) + '\n')
         f_out.write('x0      : ' + str(xOpt[0]) + '\n')
         f_out.write('x1      : ' + str(xOpt[1]) + '\n')
         f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
-        f_out.write('hi  obj : ' + str(f[1][-1]) + '\n')
+        f_out.write('hi  obj : ' + str(f[1][-1]) + '\n')        
+            
+        if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-14,atol=1e-12))==len(x):
+            print 'Hard convergence reached'      
+            f_out.write('Hard convergence reached')
+            converged = True
+            break
+            
+        if f[1][-1] < fOpt_min:
+            fOpt_min = fOpt*1.
+            xOpt_min = xOpt*1.
+       
             
         pass
+    
+    if converged == False:
+        print 'Iteration limit reached'
+        f_out.write('Maximum iteration limit reached')
     
     np.save('x_samples.npy',x_samples)
     np.save('all_data.npy',np.vstack([x_samples[:,0],x_samples[:,1],f_diff,f[0,:],f[1,:]]))
     f_out.close()
-    print f[1][-1],xOpt
-    return (f[1][-1],xOpt)
+    print fOpt,xOpt
+    return (fOpt,xOpt)
     
     
 def evaluate_model(problem,x,cons,der_flag=True):
