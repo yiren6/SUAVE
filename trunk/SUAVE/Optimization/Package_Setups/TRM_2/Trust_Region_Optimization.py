@@ -121,6 +121,7 @@ class Trust_Region_Optimization(Data):
         g_violation2_hi = 0 # post subproblem constraint violation (high fidelity)
         g_violation2_lo = 0 # post subproblem constraint violation (low fidelity)
         tr_index = self.trust_region_center_index
+        accepted = 0
         
         while iterations < max_iterations:
             iterations += 1
@@ -289,9 +290,9 @@ class Trust_Region_Optimization(Data):
             
             success_indicator = outputs[2]['value'][0]
             # hard convergence check
-            if (success_indicator==1 and np.sum(np.isclose(xOpt_lo,x,rtol=1e-14,atol=1e-12))==len(x)):
+            if (accepted==1 and np.sum(np.isclose(xOpt_lo,x,rtol=1e-4,atol=1e-12))==len(x)):
                 print 'Hard convergence reached'
-                f_out.write('hard convergence reached')
+                f_out.write('Hard convergence reached')
                 f_out.close()
                 return outputs
             print 'fOpt_lo = ', fOpt_lo

@@ -192,7 +192,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
         f_out.write('hi  obj : ' + str(f[1][-1]) + '\n')        
             
-        if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-14,atol=1e-12))==len(x):
+        if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-4,atol=1e-12))==len(x):
             print 'Hard convergence reached'      
             f_out.write('Hard convergence reached')
             converged = True
