@@ -2,6 +2,7 @@
 #
 # Created:  
 # Modified: Feb 2016, Andrew Wendorff
+# Modified: Apr 2017, Matthew Clarke
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -24,15 +25,20 @@ class Weights(Analysis):
         self.vehicle  = Data()
         
         self.settings = Data()
-        self.settings.empty_weight_method = \
-            SUAVE.Methods.Weights.Correlations.Tube_Wing.empty
+        
+        #self.settings.empty_weight_method = \
+            #SUAVE.Methods.Weights.Correlations.Tube_Wing.empty
         
         
     def evaluate(self,conditions=None):
         
         # unpack
         vehicle = self.vehicle
-        empty   = self.settings.empty_weight_method
+        
+        if vehicle.fuselages.has_key('fuselage'):
+            empty   = SUAVE.Methods.Weights.Correlations.Tube_Wing.empty
+        elif vehicle.fuselages.has_key('fuselage_bwb'):
+            empty   = SUAVE.Methods.Weights.Correlations.BWB.empty
         
         # evaluate
         results = empty(vehicle)

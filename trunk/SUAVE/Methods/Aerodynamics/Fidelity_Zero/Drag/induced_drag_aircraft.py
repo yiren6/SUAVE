@@ -68,12 +68,15 @@ def induced_drag_aircraft(state,settings,geometry):
     
     #print("In induced_drag_aircraft:")
     #print aircraft_lift
-    fusewidth = geometry.fuselages['fuselage'].effective_diameter
-    fusefraction = fusewidth/geometry.wings['main_wing'].spans.projected
-    if(fusefraction > 0.5):
-        fusefraction = 0.5 
-    #s = 1.0 - 0.041599999999999998 * fusefraction - 1.7986 * fusefraction * fusefraction
-    s = 1.0 - 2.0 * fusefraction * fusefraction
+    if geometry.fuselages.has_key('fuselage'):
+        fusewidth = geometry.fuselages['fuselage'].effective_diameter
+        fusefraction = fusewidth/geometry.wings['main_wing'].spans.projected
+        if(fusefraction > 0.5):
+            fusefraction = 0.5 
+        #s = 1.0 - 0.041599999999999998 * fusefraction - 1.7986 * fusefraction * fusefraction
+        s = 1.0 - 2.0 * fusefraction * fusefraction
+    else:
+        s = 1.
     wing_e = s
     
 

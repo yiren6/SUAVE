@@ -2,7 +2,7 @@
 # 
 # Created:  Oct 2014, T. Momose
 # Modified: Jan 2016, E. Botero
-
+# Modified: Arp 2017, M. Clarke
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -12,7 +12,7 @@ from SUAVE.Core import Data
 
 from Wing import Wing
 from Body import Body
-
+#from Engine import Engine
 
 # ------------------------------------------------------------
 #   Aircraft
