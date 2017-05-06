@@ -123,6 +123,9 @@ class Trust_Region_Optimization(Data):
         tr_index = self.trust_region_center_index
         accepted = 0
         
+        fOpt_min = np.array([10000.])
+        xOpt_min = x*1.        
+        
         while iterations < max_iterations:
             iterations += 1
             self.increment_iteration()
@@ -289,12 +292,7 @@ class Trust_Region_Optimization(Data):
             g_violation_opt_lo = self.calculate_constraint_violation(gOpt,low_edge,up_edge)
             
             success_indicator = outputs[2]['value'][0]
-            # hard convergence check
-            if (accepted==1 and np.sum(np.isclose(xOpt_lo,x,rtol=1e-4,atol=1e-12))==len(x)):
-                print 'Hard convergence reached'
-                f_out.write('Hard convergence reached')
-                f_out.close()
-                return outputs
+
             print 'fOpt_lo = ', fOpt_lo
             print 'xOpt_lo = ', xOpt_lo
             print 'gOpt_lo = ', gOpt_lo
@@ -432,6 +430,13 @@ class Trust_Region_Optimization(Data):
             f_out.write('hi  obj  : ' + str(fOpt_hi[0]) + '\n')
             self.obj_hi.append(fOpt_hi[0])
             
+            # hard convergence check
+            if (accepted==1 and np.isclose(fOpt_min[0],fOpt_hi[0],rtol=1e-4,atol=1e-12)==1):
+                print 'Hard convergence reached'
+                f_out.write('Hard convergence reached')
+                f_out.close()
+                return outputs            
+            
             # Update Trust Region Center
             if accepted == 1:
                 x = xOpt_lo
@@ -440,6 +445,10 @@ class Trust_Region_Optimization(Data):
             else:
                 aa = 0
                 pass          
+            
+            if fOpt_hi < fOpt_min:
+                fOpt_min = fOpt_hi*1.
+                xOpt_min = xOpt_lo*1.            
             
             print iterations
             print x
