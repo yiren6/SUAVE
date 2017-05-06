@@ -125,7 +125,7 @@ class Fidelity_Zero(Stability):
         static_stability.Cm_alpha,static_stability.cm0, static_stability.CM  = taw_cmalpha(geometry,mach,conditions,configuration)
 	#print static_stability.cm_alpha[0][0]
         if geometry.wings.has_key('vertical_stabilizer'):
-	    static_stability.cn_beta  = taw_cnbeta(geometry,conditions,configuration)
+	    static_stability.Cn_beta  = taw_cnbeta(geometry,conditions,configuration)
 	else:
 	    static_stability.Cn_beta = np.zeros_like(mach)
 	    
@@ -157,20 +157,20 @@ class Fidelity_Zero(Stability):
             dynamic_stability.cm_q = Supporting_Functions.cm_q(conditions.lift_curve_slope, l_t,mac) # Need to check Cm_i versus Cm_alpha
             
             # Derivative of pitching rate with respect to d(alpha)/d(t)
-            dynamic_stability.cm_alpha_dot = Supporting_Functions.cm_alphadot(static_stability.cm_alpha, geometry.wings['horizontal_stabilizer'].ep_alpha, l_t, mac) # Need to check Cm_i versus Cm_alpha
+            dynamic_stability.cm_alpha_dot = Supporting_Functions.cm_alphadot(static_stability.Cm_alpha, geometry.wings['horizontal_stabilizer'].ep_alpha, l_t, mac) # Need to check Cm_i versus Cm_alpha
               
             # Derivative of Z-axis force with respect to angle of attack  
             dynamic_stability.cz_alpha = Supporting_Functions.cz_alpha(aero.drag_coefficient,conditions.lift_curve_slope)
 
 
-            stability_model.dutch_roll = Approximations.dutch_roll(velocity, static_stability.cn_beta, Sref, density, Span, configuration.mass_properties.moments_of_inertia.tensor[2][2], dynamic_stability.cn_r)
+            stability_model.dutch_roll = Approximations.dutch_roll(velocity, static_stability.Cn_beta, Sref, density, Span, configuration.mass_properties.moments_of_inertia.tensor[2][2], dynamic_stability.cn_r)
             
             if dynamic_stability.cl_p.all() != 0:
                 stability_model.roll_tau   = Approximations.roll(configuration.mass_properties.moments_of_inertia.tensor[2][2], Sref, density, velocity, Span, dynamic_stability.cl_p)
                 dynamic_stability.cy_phi   = Supporting_Functions.cy_phi(aero.lift_coefficient)
                 dynamic_stability.cl_r     = Supporting_Functions.cl_r(aero.lift_coefficient) # Will need to be changed
-                stability_model.spiral_tau = Approximations.spiral(conditions.weights.total_mass, velocity, density, Sref, dynamic_stability.cl_p, static_stability.cn_beta, dynamic_stability.cy_phi, dynamic_stability.cl_beta, dynamic_stability.cn_r, dynamic_stability.cl_r)
-            stability_model.short_period   = Approximations.short_period(velocity, density, Sref, mac, dynamic_stability.cm_q, dynamic_stability.cz_alpha, conditions.weights.total_mass, static_stability.cm_alpha, configuration.mass_properties.moments_of_inertia.tensor[1][1], dynamic_stability.cm_alpha_dot)
+                stability_model.spiral_tau = Approximations.spiral(conditions.weights.total_mass, velocity, density, Sref, dynamic_stability.cl_p, static_stability.Cn_beta, dynamic_stability.cy_phi, dynamic_stability.cl_beta, dynamic_stability.cn_r, dynamic_stability.cl_r)
+            stability_model.short_period   = Approximations.short_period(velocity, density, Sref, mac, dynamic_stability.cm_q, dynamic_stability.cz_alpha, conditions.weights.total_mass, static_stability.Cm_alpha, configuration.mass_properties.moments_of_inertia.tensor[1][1], dynamic_stability.cm_alpha_dot)
             stability_model.phugoid        = Approximations.phugoid(conditions.freestream.gravity, conditions.freestream.velocity, aero.drag_coefficient, aero.lift_coefficient)
             
             # Dynamic Stability Full Linearized Methods
@@ -179,13 +179,13 @@ class Fidelity_Zero(Stability):
                 dynamic_stability.cl_psi       = Supporting_Functions.cy_psi(aero.lift_coefficient, theta)
                 dynamic_stability.cL_u         = 0
                 dynamic_stability.cz_u         = Supporting_Functions.cz_u(aero.lift_coefficient,velocity,dynamic_stability.cL_u)
-                dynamic_stability.cz_alpha_dot = Supporting_Functions.cz_alphadot(static_stability.cm_alpha, geometry.wings['horizontal_stabilizer'].ep_alpha)
-                dynamic_stability.cz_q         = Supporting_Functions.cz_q(static_stability.cm_alpha)
+                dynamic_stability.cz_alpha_dot = Supporting_Functions.cz_alphadot(static_stability.Cm_alpha, geometry.wings['horizontal_stabilizer'].ep_alpha)
+                dynamic_stability.cz_q         = Supporting_Functions.cz_q(static_stability.Cm_alpha)
                 dynamic_stability.cx_u         = Supporting_Functions.cx_u(aero.drag_coefficient)
                 dynamic_stability.cx_alpha     = Supporting_Functions.cx_alpha(aero.lift_coefficient, conditions.lift_curve_slope)
             
-                lateral_directional = Full_Linearized_Equations.lateral_directional(velocity, static_stability.cn_beta , Sref, density, Span, configuration.mass_properties.moments_of_inertia.tensor[2][2], dynamic_stability.cn_r, configuration.mass_properties.moments_of_inertia.tensor[0][0], dynamic_stability.cl_p, configuration.mass_properties.moments_of_inertia.tensor[0][2], dynamic_stability.cl_r, dynamic_stability.cl_beta, dynamic_stability.cn_p, dynamic_stability.cy_phi, dynamic_stability.cy_psi, dynamic_stability.cy_beta, conditions.weights.total_mass)
-                longitudinal        = Full_Linearized_Equations.longitudinal(velocity, density, Sref, mac, dynamic_stability.cm_q, dynamic_stability.cz_alpha, conditions.weights.total_mass, static_stability.cm_alpha, configuration.mass_properties.moments_of_inertia.tensor[1][1], dynamic_stability.cm_alpha_dot, dynamic_stability.cz_u, dynamic_stability.cz_alpha_dot, dynamic_stability.cz_q, -aero.lift_coefficient, theta, dynamic_stability.cx_u, dynamic_stability.cx_alpha)                    
+                lateral_directional = Full_Linearized_Equations.lateral_directional(velocity, static_stability.Cn_beta , Sref, density, Span, configuration.mass_properties.moments_of_inertia.tensor[2][2], dynamic_stability.cn_r, configuration.mass_properties.moments_of_inertia.tensor[0][0], dynamic_stability.cl_p, configuration.mass_properties.moments_of_inertia.tensor[0][2], dynamic_stability.cl_r, dynamic_stability.cl_beta, dynamic_stability.cn_p, dynamic_stability.cy_phi, dynamic_stability.cy_psi, dynamic_stability.cy_beta, conditions.weights.total_mass)
+                longitudinal        = Full_Linearized_Equations.longitudinal(velocity, density, Sref, mac, dynamic_stability.cm_q, dynamic_stability.cz_alpha, conditions.weights.total_mass, static_stability.Cm_alpha, configuration.mass_properties.moments_of_inertia.tensor[1][1], dynamic_stability.cm_alpha_dot, dynamic_stability.cz_u, dynamic_stability.cz_alpha_dot, dynamic_stability.cz_q, -aero.lift_coefficient, theta, dynamic_stability.cx_u, dynamic_stability.cx_alpha)                    
                 stability_model.dutch_roll.natural_frequency   = lateral_directional.dutch_natural_frequency
                 stability_model.dutch_roll.damping_ratio       = lateral_directional.dutch_damping_ratio
                 stability_model.spiral_tau                     = lateral_directional.spiral_tau
