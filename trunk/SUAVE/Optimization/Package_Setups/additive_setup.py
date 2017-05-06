@@ -107,32 +107,32 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         g_additive_surrogate_base = gaussian_process.GaussianProcessRegressor()
         g_additive_surrogate = g_additive_surrogate_base.fit(x_samples, g_diff)     
         
-        # Plot Surrogates -------------------------------------------------------
-        import matplotlib.pyplot as plt
-        x1s = np.linspace(lbd[0],ubd[0],10)
-        x2s = np.linspace(lbd[1],ubd[1],10)
-        f_test = np.zeros([len(x1s),len(x2s)])
-        g_test = np.zeros([len(x1s),len(x2s)])
-        for ii,x1 in enumerate(x1s):
-            for jj,x2 in enumerate(x2s):
-                f_test[ii,jj] = f_additive_surrogate.predict([x1,x2])
-                g_test[ii,jj] = g_additive_surrogate.predict([x1,x2])
+        ## Plot Surrogates -------------------------------------------------------
+        #import matplotlib.pyplot as plt
+        #x1s = np.linspace(lbd[0],ubd[0],10)
+        #x2s = np.linspace(lbd[1],ubd[1],10)
+        #f_test = np.zeros([len(x1s),len(x2s)])
+        #g_test = np.zeros([len(x1s),len(x2s)])
+        #for ii,x1 in enumerate(x1s):
+            #for jj,x2 in enumerate(x2s):
+                #f_test[ii,jj] = f_additive_surrogate.predict([x1,x2])
+                #g_test[ii,jj] = g_additive_surrogate.predict([x1,x2])
                 
-        fig = plt.figure('Objective Additive Surrogate Plot')    
-        CS = plt.contourf(x2s,x1s,f_test, linewidths=2)
-        cbar = plt.colorbar(CS)
-        cbar.ax.set_ylabel('F Surrogate')
-        plt.xlabel('Aspect Ratios')
-        plt.ylabel('Wing Areas')   
+        #fig = plt.figure('Objective Additive Surrogate Plot')    
+        #CS = plt.contourf(x2s,x1s,f_test, linewidths=2)
+        #cbar = plt.colorbar(CS)
+        #cbar.ax.set_ylabel('F Surrogate')
+        #plt.xlabel('Aspect Ratios')
+        #plt.ylabel('Wing Areas')   
         
-        # This will only plot properly if there is only one constraint
-        fig = plt.figure('Constraint Additive Surrogate Plot')    
-        CS = plt.contourf(x2s,x1s,g_test, linewidths=2)
-        cbar = plt.colorbar(CS)
-        cbar.ax.set_ylabel('G Surrogate')
-        plt.xlabel('Aspect Ratios')
-        plt.ylabel('Wing Areas')       
-        # -----------------------------------------------------------------------
+        ### This will only plot properly if there is only one constraint
+        ##fig = plt.figure('Constraint Additive Surrogate Plot')    
+        ##CS = plt.contourf(x2s,x1s,g_test, linewidths=2)
+        ##cbar = plt.colorbar(CS)
+        ##cbar.ax.set_ylabel('G Surrogate')
+        ##plt.xlabel('Aspect Ratios')
+        ##plt.ylabel('Wing Areas')       
+        ## -----------------------------------------------------------------------
         
         # Optimize corrected model
         
@@ -192,11 +192,18 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
         f_out.write('hi  obj : ' + str(f[1][-1]) + '\n')        
             
-        if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-4,atol=1e-12))==len(x):
+        #if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-4,atol=1e-12))==len(x):
+            #print 'Hard convergence reached'      
+            #f_out.write('Hard convergence reached')
+            #converged = True
+            #break
+        
+        if np.isclose(fOpt_min,fOpt,rtol=1e-4,atol=1e-12)==1:
             print 'Hard convergence reached'      
             f_out.write('Hard convergence reached')
+            f_diff = f[1,:] - f[0,:]
             converged = True
-            break
+            break        
             
         if f[1][-1] < fOpt_min:
             fOpt_min = fOpt*1.
@@ -206,7 +213,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         pass
     
     if converged == False:
-        print 'Iteration limit reached'
+        #print 'Iteration Limit reached'
         f_out.write('Maximum iteration limit reached')
     
     np.save('x_samples.npy',x_samples)
