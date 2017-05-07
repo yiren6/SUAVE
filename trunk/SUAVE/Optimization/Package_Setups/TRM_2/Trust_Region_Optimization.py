@@ -431,7 +431,7 @@ class Trust_Region_Optimization(Data):
             self.obj_hi.append(fOpt_hi[0])
             
             # hard convergence check
-            if (accepted==1 and np.isclose(fOpt_min[0],fOpt_hi[0],rtol=1e-4,atol=1e-12)==1):
+            if (accepted==1 and np.isclose(fOpt_min[0],fOpt_hi[0],rtol=1e-5,atol=1e-12)==1):
                 print 'Hard convergence reached'
                 f_out.write('Hard convergence reached')
                 f_out.close()

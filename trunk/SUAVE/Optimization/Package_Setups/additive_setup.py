@@ -139,11 +139,13 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
                                       obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)
         
+        x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='center')
+        
         for ii in xrange(len(obj)):
             opt_prob.addObj('f',100) 
         for ii in xrange(0,len(inp)):
             vartype = 'c'
-            opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=xOpt_min[ii])    
+            opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
         for ii in xrange(0,len(con)):
             if con[ii][1]=='<':
                 opt_prob.addCon(name[ii], type='i', upper=edge[ii])
@@ -198,7 +200,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             #converged = True
             #break
         
-        if np.isclose(fOpt_min,fOpt,rtol=1e-4,atol=1e-12)==1:
+        if np.isclose(fOpt_min,f[1][-1],rtol=1e-4,atol=1e-12)==1:
             print 'Hard convergence reached'      
             f_out.write('Hard convergence reached')
             f_diff = f[1,:] - f[0,:]
