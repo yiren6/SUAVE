@@ -82,14 +82,14 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
     
     
     f = np.zeros([num_fidelity_levels,num_samples])
-    g = np.zeros([num_fidelity_levels,num_samples])
+    g = np.zeros([num_fidelity_levels,num_samples,len(scaled_constraints)])
     
     for level in range(1,num_fidelity_levels+1):
         problem.fidelity_level = level
         for ii,x in enumerate(x_samples):
             res = evaluate_model(problem,x,scaled_constraints)
             f[level-1,ii]  = res[0]    # objective value
-            g[level-1,ii]  = res[1]    # constraints vector
+            g[level-1,ii,:]  = res[1]    # constraints vector
             
     fOpt_min = 10000.
     xOpt_min = x*1.
@@ -139,7 +139,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
                                       obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)
         
-        x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='center')
+        x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
         
         for ii in xrange(len(obj)):
             opt_prob.addObj('f',100) 
@@ -169,16 +169,16 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         xOpt = outputs[1]
         gOpt = np.zeros([1,len(con)])[0]
         
-        if kk == (max_iterations-1):
-            f_out.write('Iteration: ' + str(kk+1) + '\n')
-            f_out.write('x0      : ' + str(xOpt[0]) + '\n')
-            f_out.write('x1      : ' + str(xOpt[1]) + '\n')
-            f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
-            print 'Iteration Limit Reached'
-            break
+        #if kk == (max_iterations-1):
+            #f_out.write('Iteration: ' + str(kk+1) + '\n')
+            #f_out.write('x0      : ' + str(xOpt[0]) + '\n')
+            #f_out.write('x1      : ' + str(xOpt[1]) + '\n')
+            #f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
+            #print 'Iteration Limit Reached'
+            #break
         
         f = np.hstack((f,np.zeros((num_fidelity_levels,1))))
-        g = np.hstack((g,np.zeros((num_fidelity_levels,len(gOpt)))))
+        g = np.hstack((g,np.zeros((num_fidelity_levels,1,len(gOpt)))))
         x_samples = np.vstack((x_samples,xOpt))
         for level in range(1,num_fidelity_levels+1):
             problem.fidelity_level = level
@@ -192,7 +192,11 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         f_out.write('x1      : ' + str(xOpt[1]) + '\n')
         f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
-        f_out.write('hi  obj : ' + str(f[1][-1]) + '\n')        
+        f_out.write('hi  obj : ' + str(f[1][-1]) + '\n') 
+        if kk == (max_iterations-1):
+            f_diff = f[1,:] - f[0,:]
+            print 'Iteration Limit Reached'
+            break        
             
         #if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-4,atol=1e-12))==len(x):
             #print 'Hard convergence reached'      
@@ -208,7 +212,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             break        
             
         if f[1][-1] < fOpt_min:
-            fOpt_min = fOpt*1.
+            fOpt_min = f[1][-1]*1.
             xOpt_min = xOpt*1.
        
             
@@ -244,7 +248,7 @@ def evaluate_corrected_model(x,problem=None,obj_surrogate=None,cons_surrogate=No
     
     obj   = obj + obj_addition
     const = const + cons_addition
-    const = const.tolist()
+    const = const.tolist()[0]
 
     print 'Inputs'
     print x
