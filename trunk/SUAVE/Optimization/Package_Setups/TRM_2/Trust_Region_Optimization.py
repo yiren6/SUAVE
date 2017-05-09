@@ -34,7 +34,7 @@ class Trust_Region_Optimization(Data):
         self.shared_data_index                  = 0 
         self.truth_history                      = dict() # history for truth function evaluations
         self.surrogate_history                  = dict() # history for evaluation of surrogate models (all fidelity levels)
-        self.trust_region_history               = None
+        self.trust_region_history               = []
         self.number_truth_evals                 = dict()
         self.number_duplicate_truth_evals       = 0
         self.number_surrogate_evals             = 0
@@ -43,6 +43,7 @@ class Trust_Region_Optimization(Data):
         self.objective_history                  = []
         self.constraint_history                 = []
         self.relative_difference_history        = []
+        self.design_variable_history            = []
         
     def optimize(self,problem):
         inp = problem.optimization_problem.inputs
@@ -430,11 +431,20 @@ class Trust_Region_Optimization(Data):
             f_out.write('hi  obj  : ' + str(fOpt_hi[0]) + '\n')
             self.obj_hi.append(fOpt_hi[0])
             
+            self.trust_region_history.append([trc, tr_size_previous])
+            self.design_variable_history.append([xOpt_lo,fOpt_hi])
+            
             # hard convergence check
             if (accepted==1 and np.isclose(fOpt_min[0],fOpt_hi[0],rtol=1e-5,atol=1e-12)==1):
                 print 'Hard convergence reached'
                 f_out.write('Hard convergence reached')
                 f_out.close()
+                all_data = np.zeros([len(self.trust_region_history),6])
+                for ii in range(len(self.trust_region_history)):
+                    all_data[ii,:] = np.array([self.trust_region_history[ii][0][0],self.trust_region_history[ii][0][1],\
+                                               self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
+                                               self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])      
+                np.save('all_TRM_data.npy',all_data)
                 return outputs            
             
             # Update Trust Region Center
@@ -457,6 +467,12 @@ class Trust_Region_Optimization(Data):
         
         f_out.write('Max iteration limit reached')
         f_out.close()
+        all_data = np.zeros([len(self.trust_region_history),6])
+        for ii in range(len(self.trust_region_history)):
+            all_data[ii,:] = np.array([self.trust_region_history[ii][0][0],self.trust_region_history[ii][0][1],\
+                                       self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
+                                       self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])  
+        np.save('all_TRM_data.npy',all_data)
         print 'Max iteration limit reached'
         return (fOpt,xOpt)
             
