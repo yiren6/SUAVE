@@ -368,6 +368,12 @@ class Trust_Region_Optimization(Data):
             if( converged and len(self.relative_difference_history) >= tr.soft_convergence_limit):
                 f_out.write('soft convergence reached')
                 f_out.close()
+                all_data = np.zeros([len(self.trust_region_history),6])
+                for ii in range(len(self.trust_region_history)):
+                    all_data[ii,:] = np.array([self.trust_region_history[ii][0][0],self.trust_region_history[ii][0][1],\
+                                               self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
+                                               self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])      
+                np.save('all_TRM_data.npy',all_data)                
                 print 'Soft convergence reached'
                 return outputs     
             
