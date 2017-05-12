@@ -8,7 +8,7 @@ from SUAVE.Core import Units, Data
 from SUAVE.Optimization import helper_functions as help_fun
 from SUAVE.Methods.Utilities.latin_hypercube_sampling import latin_hypercube_sampling
 
-def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10):
+def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6):
     
     if num_fidelity_levels != 2:
         raise NotImplementedError
@@ -204,7 +204,7 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             #converged = True
             #break
         
-        if np.isclose(fOpt_min,f[1][-1],rtol=1e-6,atol=1e-12)==1:
+        if np.isclose(fOpt_min,f[1][-1],rtol=tolerance,atol=1e-12)==1:
             print 'Hard convergence reached'      
             f_out.write('Hard convergence reached')
             f_diff = f[1,:] - f[0,:]
