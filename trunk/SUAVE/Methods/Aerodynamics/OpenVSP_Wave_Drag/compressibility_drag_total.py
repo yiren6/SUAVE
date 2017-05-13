@@ -64,7 +64,7 @@ def compressibility_drag_total(state,settings,geometry):
     drag_breakdown.compressible = Results()
     
     # Use main wing reference area for drag coefficients
-    Sref_main = wings.main_wing.areas.reference
+    Sref_main = geometry.reference_area
     
 
     drag99_total  = np.zeros(np.shape(Mc))
@@ -232,8 +232,7 @@ def drag_div(Mc_ii,wing,k,cl,Sref_main):
     else:
         cd_c = dcdc_cos3g * (np.cos(sweep_w))**3
         
-    if k != 'main_wing':
-        cd_c = cd_c*wing.areas.reference/Sref_main    
+    cd_c = cd_c*wing.areas.reference/Sref_main    
 
     return (cd_c,mcc,MDiv)
 
@@ -263,8 +262,7 @@ def lift_wave_drag(conditions,configuration,wing,k,Sref_main,flag105):
     cd_c_l[mach >= 1.05] = cd_lift_wave[0:len(mach[mach >= 1.05]),0]
 
     # Convert coefficient to full aircraft value
-    if k != 'main_wing':
-        cd_c_l = cd_c_l*wing.areas.reference/Sref_main
+    cd_c_l = cd_c_l*wing.areas.reference/Sref_main
 
     # Reset mach number to real values
     conditions.freestream.mach_number = Mc

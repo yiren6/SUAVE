@@ -61,8 +61,9 @@ def compressibility_drag_total(state,settings,geometry):
     # Initialize result
     drag_breakdown.compressible = Results()
     
-    # Use main wing reference area for drag coefficients
-    Sref_main = wings.main_wing.areas.reference
+    # Use the vehicle for drag coefficients
+    Sref_main = geometry.reference_area
+    wing_ref  = geometry.wings.main_wing.areas.reference
     
 
     # Iterate through wings
@@ -131,16 +132,20 @@ def compressibility_drag_total(state,settings,geometry):
 
     # Fuselage wave drag
     if len(main_fuselage) > 0:
-        fuse_drag[mach >= 1.05] = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,Sref_main)
+        fuse_drag[mach >= 1.05] = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,wing_ref)
     else:
         raise ValueError('Main fuselage does not have a total length')
 
     # Propulsor wave drag	
-    prop_drag[mach >= 1.05] = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,Sref_main)*propulsor.number_of_engines
+    prop_drag[mach >= 1.05] = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,wing_ref)*propulsor.number_of_engines
 
     # Pack values
     #cd_c[mach >= 1.05] = cd_c[mach >= 1.05] + fuse_drag[mach >= 1.05]
     #cd_c[mach >= 1.05] = cd_c[mach >= 1.05] + prop_drag[mach >= 1.05]   
+    
+    fuse_drag = fuse_drag*wing_ref/Sref_main
+    prop_drag = prop_drag*wing_ref/Sref_main
+    
     drag_breakdown.compressible[main_fuselage.tag] = fuse_drag
     drag_breakdown.compressible[propulsor.tag] = prop_drag
 
@@ -154,10 +159,10 @@ def compressibility_drag_total(state,settings,geometry):
         total_volume_wave_drag     = drag_breakdown.compressible[k].volume_wave_drag + total_volume_wave_drag
         total_lift_wave_drag       = drag_breakdown.compressible[k].lift_wave_drag + total_lift_wave_drag
         
-    total_compressibility_drag = total_compressibility_drag + fuse_drag
-    total_compressibility_drag = total_compressibility_drag + prop_drag
-    total_volume_wave_drag     = total_volume_wave_drag + fuse_drag + prop_drag
-    drag_breakdown.compressible.total = total_compressibility_drag
+    total_compressibility_drag               = total_compressibility_drag + fuse_drag
+    total_compressibility_drag               = total_compressibility_drag + prop_drag
+    total_volume_wave_drag                   = total_volume_wave_drag + fuse_drag + prop_drag
+    drag_breakdown.compressible.total        = total_compressibility_drag
     drag_breakdown.compressible.total_volume = total_volume_wave_drag
     drag_breakdown.compressible.total_lift   = total_lift_wave_drag
 
@@ -218,8 +223,7 @@ def drag_div(Mc_ii,wing,k,cl,Sref_main):
     else:
         cd_c = dcdc_cos3g * (np.cos(sweep_w))**3
         
-    if k != 'main_wing':
-        cd_c = cd_c*wing.areas.reference/Sref_main    
+    cd_c = cd_c*wing.areas.reference/Sref_main    
 
     return (cd_c,mcc,MDiv)
 
@@ -254,10 +258,9 @@ def wave_drag(conditions,configuration,main_fuselage,propulsor,wing,num_engines,
     cd_c_v[mach >= 1.05] = cd_volume_wave[0:len(mach[mach >= 1.05]),0]
 
     # Convert coefficient to full aircraft value
-    if k != 'main_wing':
-        cd_c = cd_c*wing.areas.reference/Sref_main
-        cd_c_l = cd_c_l*wing.areas.reference/Sref_main
-        cd_c_v = cd_c_v*wing.areas.reference/Sref_main
+    cd_c = cd_c*wing.areas.reference/Sref_main
+    cd_c_l = cd_c_l*wing.areas.reference/Sref_main
+    cd_c_v = cd_c_v*wing.areas.reference/Sref_main
 
     # Include fuselage and propulsors for one iteration
 
