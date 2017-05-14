@@ -249,7 +249,7 @@ def wave_drag(conditions,configuration,main_fuselage,propulsor,wing,num_engines,
 
     # Calculate wing values at all mach numbers
     # Note that these functions arrange the supersonic values at the beginning of the array
-    cd_lift_wave = wave_drag_lift(conditions,configuration,wing)
+    cd_lift_wave = wave_drag_lift(conditions,configuration,wing,Sref_main)
     cd_volume_wave = wave_drag_volume(conditions,configuration,wing)
 
     # Pack supersonic results into correct elements
