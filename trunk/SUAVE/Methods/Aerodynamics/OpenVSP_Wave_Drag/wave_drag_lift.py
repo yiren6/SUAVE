@@ -47,8 +47,10 @@ def wave_drag_lift(conditions,configuration,wing):
     # Length-wise aspect ratio
     ARL = total_length**2/Sref
     
-    # Lift coefficient
-    CL = conditions.aerodynamics.lift_coefficient_wing[wing.tag] * 1.0
+    if wing.vertical:
+        CL = np.zeros_like(conditions.aerodynamics.lift_coefficient)
+    else:
+        CL = conditions.aerodynamics.lift_breakdown.inviscid_wings_lift_each[wing.tag]
     
     # Computations
     x = np.pi*ARL/4
