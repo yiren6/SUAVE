@@ -259,3 +259,25 @@ def evaluate_corrected_model(x,problem=None,obj_surrogate=None,cons_surrogate=No
     print const
         
     return obj,const,fail
+
+def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surrogate=None,fstar=np.inf):
+    obj   = problem.objective(x)
+    const = problem.all_constraints(x).tolist()
+    fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
+    
+    obj_addition, obj_sigma   = obj_surrogate.predict(x)
+    cons_addition, cons_sigma = cons_surrogate.predict(x)
+    
+    fhat  = obj   + obj_addition
+    EI    = (fstar-fhat)*norm.cdf((fstar-fhat)/obj_sigma) + obj_sigma*norm.pdf((fstar-fhat)/obj_sigma)
+    const = const + cons_addition
+    const = const.tolist()[0]
+
+    print 'Inputs'
+    print x
+    print 'Obj'
+    print EI
+    print 'Con'
+    print const
+        
+    return EI,const,fail
