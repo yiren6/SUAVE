@@ -7,8 +7,9 @@ from sklearn import gaussian_process
 from SUAVE.Core import Units, Data
 from SUAVE.Optimization import helper_functions as help_fun
 from SUAVE.Methods.Utilities.latin_hypercube_sampling import latin_hypercube_sampling
+from scipy.stats import norm
 
-def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6):
+def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6,opt_type='basic'):
     
     if num_fidelity_levels != 2:
         raise NotImplementedError
