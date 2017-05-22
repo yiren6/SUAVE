@@ -290,7 +290,7 @@ class Trust_Region_Optimization(Data):
             for ii in xrange(len(con)):
                 gOpt_lo[ii] = opt_prob._solutions[0]._constraints[ii].value
        
-            g_violation_opt_lo = self.calculate_constraint_violation(gOpt,low_edge,up_edge)
+            g_violation_opt_lo = self.calculate_constraint_violation(gOpt_lo,low_edge,up_edge)
             
             success_indicator = outputs[2]['value'][0]
 
@@ -374,6 +374,7 @@ class Trust_Region_Optimization(Data):
                                                self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
                                                self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])      
                 np.save('all_TRM_data.npy',all_data)                
+                np.save('TRM_cons_data.npy',np.hstack([self.constraint_history]))
                 print 'Soft convergence reached'
                 return outputs     
             
@@ -451,6 +452,7 @@ class Trust_Region_Optimization(Data):
                                                self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
                                                self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])      
                 np.save('all_TRM_data.npy',all_data)
+                np.save('TRM_cons_data.npy',np.hstack([self.constraint_history]))
                 return outputs            
             
             # Update Trust Region Center
@@ -479,6 +481,7 @@ class Trust_Region_Optimization(Data):
                                        self.trust_region_history[ii][1],self.design_variable_history[ii][0][0],\
                                        self.design_variable_history[ii][0][1],self.design_variable_history[ii][1][0]])  
         np.save('all_TRM_data.npy',all_data)
+        np.save('TRM_cons_data.npy',np.hstack([self.constraint_history]))
         print 'Max iteration limit reached'
         return (fOpt,xOpt)
             
