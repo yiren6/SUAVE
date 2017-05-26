@@ -285,10 +285,40 @@ class Trust_Region_Optimization(Data):
             gOpt_lo = np.zeros([1,len(con)])[0]
             
             
-           
-            
-            for ii in xrange(len(con)):
-                gOpt_lo[ii] = opt_prob._solutions[0]._constraints[ii].value
+            # Constraint minization ------------------------------------------------------------------------
+            if outputs[2]['value'][0] == 13:
+                print 'Infeasible within trust region, attempting to minimize constraint'
+                opt_prob = pyOpt.Optimization('SUAVE',self.evaluate_constraints, corrections=corrections,tr=tr,
+                                              lb=low_edge,ub=up_edge)
+                for ii in xrange(len(obj)):
+                    opt_prob.addObj('constraint violation',0.) 
+                for ii in xrange(0,len(inp)):
+                    vartype = 'c'
+                    opt_prob.addVar(nam[ii],vartype,lower=tr.lower_bound[ii],upper=tr.upper_bound[ii],value=x[ii])           
+                opt = pyOpt.pySNOPT.SNOPT()            
+                opt.setOption('Major iterations limit'     , self.optimizer_max_iterations)
+                opt.setOption('Major optimality tolerance' , self.optimizer_convergence_tolerance)
+                opt.setOption('Major feasibility tolerance', self.optimizer_constraint_tolerance)
+                opt.setOption('Function precision'         , self.optimizer_function_precision)
+                opt.setOption('Verify level'               , self.optimizer_verify_level)                 
+                
+                problem.fidelity_level = 1
+               
+                con_outputs = opt(opt_prob, sens_type='FD',problem=problem,corrections=corrections,tr=tr,
+                                  lb=low_edge,ub=up_edge)#, sens_step = sense_step)
+                xOpt_lo = con_outputs[1]
+                new_outputs = self.evaluate_corrected_model(x, problem=problem,corrections=corrections,tr=tr)
+                
+                fOpt_lo = np.array([[new_outputs[0][0]]])
+                #xOpt_lo = outputs[1] (this is already given)
+                gOpt_lo = np.zeros([1,len(con)])[0]   
+                for ii in xrange(len(con)):
+                    gOpt_lo[ii] = new_outputs[1][ii]
+                
+                # Constraint minization end ------------------------------------------------------------------------
+            else:
+                for ii in xrange(len(con)):
+                    gOpt_lo[ii] = opt_prob._solutions[0]._constraints[ii].value
        
             g_violation_opt_lo = self.calculate_constraint_violation(gOpt_lo,low_edge,up_edge)
             
@@ -545,6 +575,34 @@ class Trust_Region_Optimization(Data):
             print const
             
         return obj,const,fail
+    
+    def evaluate_constraints(self,x,problem=None,corrections=None,tr=None,lb=None,ub=None):
+        #duplicate_flag, obj, gradient = self.check_for_duplicate_evals(x)
+        duplicate_flag = False
+        if duplicate_flag == False:
+            obj   = problem.objective(x)
+            const = problem.all_constraints(x).tolist()
+            #const = []
+            fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
+            
+            A, b = corrections
+            x0   = tr.center
+            
+            obj   = obj + np.dot(A[0,:],(x-x0))+b[0]
+            const = const + np.matmul(A[1:,:],(x-x0))+b[1:]
+            const = const.tolist()
+            
+            obj = self.calculate_constraint_violation(const,lb,ub)
+            const = None
+            
+            print 'Inputs'
+            print x
+            print 'Obj'
+            print obj
+            print 'Con'
+            print const            
+            
+        return obj,const,fail    
         
         
     def calculate_constraint_violation(self,gval,lb,ub):

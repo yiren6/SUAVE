@@ -9,7 +9,7 @@ from SUAVE.Optimization import helper_functions as help_fun
 from SUAVE.Methods.Utilities.latin_hypercube_sampling import latin_hypercube_sampling
 from scipy.stats import norm
 
-def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6,opt_type='basic'):
+def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6,opt_type='basic',num_starts=3):
     
     if num_fidelity_levels != 2:
         raise NotImplementedError
@@ -137,46 +137,70 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         
         # Optimize corrected model
         
-        opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
-                                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)
+        # Chose method ---------------
+        if opt_type == 'basic':
+            opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
+                                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)       
         
-        x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
-        
-        for ii in xrange(len(obj)):
-            opt_prob.addObj('f',100) 
-        for ii in xrange(0,len(inp)):
-            vartype = 'c'
-            opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
-        for ii in xrange(0,len(con)):
-            if con[ii][1]=='<':
-                opt_prob.addCon(name[ii], type='i', upper=edge[ii])
-            elif con[ii][1]=='>':
-                opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
-            elif con[ii][1]=='=':
-                opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+            x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
+            
+            for ii in xrange(len(obj)):
+                opt_prob.addObj('f',100) 
+            for ii in xrange(0,len(inp)):
+                vartype = 'c'
+                opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
+            for ii in xrange(0,len(con)):
+                if con[ii][1]=='<':
+                    opt_prob.addCon(name[ii], type='i', upper=edge[ii])
+                elif con[ii][1]=='>':
+                    opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
+                elif con[ii][1]=='=':
+                    opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+               
+            opt = pyOpt.pySNOPT.SNOPT()      
+            
+            problem.fidelity_level = 1
+            outputs = opt(opt_prob, sens_type='FD',problem=problem, \
+                          obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
+            fOpt = outputs[0]
+            xOpt = outputs[1]
+            gOpt = np.zeros([1,len(con)])[0]
+
+        elif opt_type == 'MEI':
+            opt_prob = pyOpt.Optimization('SUAVE',evaluate_expected_improvement, \
+                                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)     
+
+            fOpt = np.inf
+            for mm in range(num_starts):
+            
+                x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
                 
-           
-        opt = pyOpt.pySNOPT.SNOPT()      
-        #opt.setOption('Major iterations limit'     , self.optimizer_max_iterations)
-        #opt.setOption('Major optimality tolerance' , self.optimizer_convergence_tolerance)
-        #opt.setOption('Major feasibility tolerance', self.optimizer_constraint_tolerance)
-        #opt.setOption('Function precision'         , self.optimizer_function_precision)
-        #opt.setOption('Verify level'               , self.optimizer_verify_level) 
+                for ii in xrange(len(obj)):
+                    opt_prob.addObj('f',100) 
+                for ii in xrange(0,len(inp)):
+                    vartype = 'c'
+                    opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
+                for ii in xrange(0,len(con)):
+                    if con[ii][1]=='<':
+                        opt_prob.addCon(name[ii], type='i', upper=edge[ii])
+                    elif con[ii][1]=='>':
+                        opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
+                    elif con[ii][1]=='=':
+                        opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+                   
+                opt = pyOpt.pySNOPT.SNOPT()      
+                
+                problem.fidelity_level = 1
+                outputs = opt(opt_prob, sens_type='FD',problem=problem, \
+                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
+                if outputs[0] < fOpt:
+                    fOpt = outputs[0]
+                    xOpt = outputs[1]
+                    gOpt = np.zeros([1,len(con)])[0]            
         
-        problem.fidelity_level = 1
-        outputs = opt(opt_prob, sens_type='FD',problem=problem, \
-                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
-        fOpt = outputs[0]
-        xOpt = outputs[1]
-        gOpt = np.zeros([1,len(con)])[0]
         
-        #if kk == (max_iterations-1):
-            #f_out.write('Iteration: ' + str(kk+1) + '\n')
-            #f_out.write('x0      : ' + str(xOpt[0]) + '\n')
-            #f_out.write('x1      : ' + str(xOpt[1]) + '\n')
-            #f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
-            #print 'Iteration Limit Reached'
-            #break
+        # ---------------------------------
+        
         
         f = np.hstack((f,np.zeros((num_fidelity_levels,1))))
         g = np.hstack((g,np.zeros((num_fidelity_levels,1,len(gOpt)))))
@@ -276,8 +300,8 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     print 'Inputs'
     print x
     print 'Obj'
-    print EI
+    print -EI
     print 'Con'
     print const
         
-    return EI,const,fail
+    return -EI,const,fail
