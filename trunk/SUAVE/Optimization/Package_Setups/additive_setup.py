@@ -167,37 +167,40 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             gOpt = np.zeros([1,len(con)])[0]
 
         elif opt_type == 'MEI':
+            fstar = np.min(f[1,:])
             opt_prob = pyOpt.Optimization('SUAVE',evaluate_expected_improvement, \
-                                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)     
+                                      obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar)     
 
             fOpt = np.inf
-            for mm in range(num_starts):
+            #for mm in range(num_starts):
             
-                x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
+                #x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
                 
-                for ii in xrange(len(obj)):
-                    opt_prob.addObj('f',100) 
-                for ii in xrange(0,len(inp)):
-                    vartype = 'c'
-                    opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
-                for ii in xrange(0,len(con)):
-                    if con[ii][1]=='<':
-                        opt_prob.addCon(name[ii], type='i', upper=edge[ii])
-                    elif con[ii][1]=='>':
-                        opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
-                    elif con[ii][1]=='=':
-                        opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
-                   
-                opt = pyOpt.pySNOPT.SNOPT()      
-                
-                problem.fidelity_level = 1
-                outputs = opt(opt_prob, sens_type='FD',problem=problem, \
-                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
-                if outputs[0] < fOpt:
-                    fOpt = outputs[0]
-                    xOpt = outputs[1]
-                    gOpt = np.zeros([1,len(con)])[0]            
-        
+            for ii in xrange(len(obj)):
+                opt_prob.addObj('f',100) 
+            for ii in xrange(0,len(inp)):
+                vartype = 'c'
+                opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii])#,value=x_eval[ii])    
+            for ii in xrange(0,len(con)):
+                if con[ii][1]=='<':
+                    opt_prob.addCon(name[ii], type='i', upper=edge[ii])
+                elif con[ii][1]=='>':
+                    opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
+                elif con[ii][1]=='=':
+                    opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+               
+            opt = pyOpt.pyALPSO.ALPSO()    
+            opt.setOption('SwarmSize', value=40)
+            opt.setOption('seed',value=1.)
+            
+            problem.fidelity_level = 1
+            outputs = opt(opt_prob,problem=problem, \
+                          obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar)#, sens_step = sense_step)  
+            if outputs[0] < fOpt:
+                fOpt = outputs[0]
+                xOpt = outputs[1]
+                gOpt = np.zeros([1,len(con)])[0]       
+                      
         
         # ---------------------------------
         
@@ -215,13 +218,51 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         f_out.write('Iteration: ' + str(kk+1) + '\n')
         f_out.write('x0      : ' + str(xOpt[0]) + '\n')
         f_out.write('x1      : ' + str(xOpt[1]) + '\n')
-        f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
+        if opt_type == 'basic':
+            f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
+        elif opt_type == 'MEI':
+            f_out.write('expd imp : ' + str(fOpt) + '\n')
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
         f_out.write('hi  obj : ' + str(f[1][-1]) + '\n') 
         if kk == (max_iterations-1):
             f_diff = f[1,:] - f[0,:]
+            if opt_type == 'basic':
+                fOpt = f[1][-1]
+            elif opt_type == 'MEI':
+                opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
+                                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)       
+            
+                min_ind = np.argmin(f[1])
+                x_eval = x_samples[min_ind]
+            
+                for ii in xrange(len(obj)):
+                    opt_prob.addObj('f',100) 
+                for ii in xrange(0,len(inp)):
+                    vartype = 'c'
+                    opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
+                for ii in xrange(0,len(con)):
+                    if con[ii][1]=='<':
+                        opt_prob.addCon(name[ii], type='i', upper=edge[ii])
+                    elif con[ii][1]=='>':
+                        opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
+                    elif con[ii][1]=='=':
+                        opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+            
+                opt = pyOpt.pySNOPT.SNOPT()      
+            
+                problem.fidelity_level = 1
+                outputs = opt(opt_prob, sens_type='FD',problem=problem, \
+                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
+                fOpt = outputs[0]
+                xOpt = outputs[1]
+                gOpt = np.zeros([1,len(con)])[0] 
+                f_out.write('x0_opt  : ' + str(xOpt[0]) + '\n')
+                f_out.write('x1_opt  : ' + str(xOpt[1]) + '\n')                
+                f_out.write('final opt : ' + str(fOpt[0]) + '\n')
             print 'Iteration Limit Reached'
             break        
+            
+        fOpt = f[1][-1]
             
         #if np.sum(np.isclose(xOpt_min,xOpt,rtol=1e-4,atol=1e-12))==len(x):
             #print 'Hard convergence reached'      
@@ -234,6 +275,37 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             f_out.write('Hard convergence reached')
             f_diff = f[1,:] - f[0,:]
             converged = True
+            if opt_type == 'MEI':
+                opt_prob = pyOpt.Optimization('SUAVE',evaluate_corrected_model, \
+                                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)       
+            
+                min_ind = np.argmin(f[1])
+                x_eval = x_samples[min_ind]
+            
+                for ii in xrange(len(obj)):
+                    opt_prob.addObj('f',100) 
+                for ii in xrange(0,len(inp)):
+                    vartype = 'c'
+                    opt_prob.addVar(nam[ii],vartype,lower=lbd[ii],upper=ubd[ii],value=x_eval[ii])    
+                for ii in xrange(0,len(con)):
+                    if con[ii][1]=='<':
+                        opt_prob.addCon(name[ii], type='i', upper=edge[ii])
+                    elif con[ii][1]=='>':
+                        opt_prob.addCon(name[ii], type='i', lower=edge[ii],upper=np.inf)
+                    elif con[ii][1]=='=':
+                        opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
+            
+                opt = pyOpt.pySNOPT.SNOPT()      
+            
+                problem.fidelity_level = 1
+                outputs = opt(opt_prob, sens_type='FD',problem=problem, \
+                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
+                fOpt = outputs[0]
+                xOpt = outputs[1]
+                gOpt = np.zeros([1,len(con)])[0] 
+                f_out.write('x0_opt  : ' + str(xOpt[0]) + '\n')
+                f_out.write('x1_opt  : ' + str(xOpt[1]) + '\n')                
+                f_out.write('final opt : ' + str(fOpt[0]) + '\n')            
             break        
             
         if f[1][-1] < fOpt_min:
@@ -289,10 +361,10 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     const = problem.all_constraints(x).tolist()
     fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
     
-    obj_addition, obj_sigma   = obj_surrogate.predict(x)
-    cons_addition, cons_sigma = cons_surrogate.predict(x)
+    obj_addition, obj_sigma   = obj_surrogate.predict(x,return_std=True)
+    cons_addition, cons_sigma = cons_surrogate.predict(x,return_std=True)
     
-    fhat  = obj   + obj_addition
+    fhat  = obj[0] + obj_addition
     EI    = (fstar-fhat)*norm.cdf((fstar-fhat)/obj_sigma) + obj_sigma*norm.pdf((fstar-fhat)/obj_sigma)
     const = const + cons_addition
     const = const.tolist()[0]
