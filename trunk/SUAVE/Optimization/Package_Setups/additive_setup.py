@@ -190,10 +190,14 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
                     opt_prob.addCon(name[ii], type='e', equal=edge[ii])      
                
             opt = pyOpt.pyALPSO.ALPSO()    
-            opt.setOption('SwarmSize', value=40)
+            #opt.setOption('SwarmSize', value=40)
+            opt.setOption('maxOuterIter',value=10)
+            opt.setOption('maxInnerIter',value=6)
             opt.setOption('seed',value=1.)
+            #opt.setOption('etol',value=1.)
             
             problem.fidelity_level = 1
+            #expected_improvement_carpet(lbd, ubd, problem, f_additive_surrogate, g_additive_surrogate, fstar)            
             outputs = opt(opt_prob,problem=problem, \
                           obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar)#, sens_step = sense_step)  
             if outputs[0] < fOpt:
@@ -376,4 +380,60 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     print 'Con'
     print const
         
-    return -EI,const,fail
+    return -np.log(EI),const,fail
+
+def expected_improvement_carpet(lbs,ubs,problem,obj_surrogate,cons_surrogate,fstar):
+
+    # assumes 2d
+
+    problem.fidelity_level = 1
+    linspace_num = 20
+    
+    x0s = np.linspace(lbs[0],ubs[0],linspace_num)
+    x1s = np.linspace(lbs[1],ubs[1],linspace_num)
+    
+    #for ii,sweep in enumerate(sweeps):
+        #for jj,twist in enumerate(twists):
+
+            #output = problem.objective([sweep,twist])
+            #summary = problem.summary    
+        
+    EI = np.zeros([linspace_num,linspace_num])        
+        
+    for ii,x0 in enumerate(x0s):
+        for jj,x1 in enumerate(x1s):
+            x = [x0,x1]
+            obj   = problem.objective(x)
+            const = problem.all_constraints(x).tolist()    
+        
+            obj_addition, obj_sigma   = obj_surrogate.predict(x,return_std=True)
+            cons_addition, cons_sigma = cons_surrogate.predict(x,return_std=True)
+            
+            fhat      = obj[0] + obj_addition
+            EI[jj,ii] = (fstar-fhat)*norm.cdf((fstar-fhat)/obj_sigma) + obj_sigma*norm.pdf((fstar-fhat)/obj_sigma)
+            const     = const + cons_addition
+            const     = const.tolist()[0]
+            
+            print ii
+            print jj
+            print 'Expected Improvement: ' + str(EI[ii,jj])
+            
+    import matplotlib.pyplot as plt
+            
+    plt.figure(1)
+    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2)
+    cbar = plt.colorbar(CS)
+    cbar.ax.set_ylabel('Expected Improvement')
+    
+    num_levels = 20
+    EI = np.log(EI)
+    if np.min(EI[EI!=-np.inf]) > -100:
+        levals = np.linspace(np.min(EI[EI!=-np.inf]),np.max(EI),num_levels)
+    else:
+        levals = np.linspace(-40,np.max(EI),num_levels)    
+    plt.figure(2)
+    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2)
+    cbar = plt.colorbar(CS)
+    cbar.ax.set_ylabel('Expected Improvement')    
+    
+    plt.show()
