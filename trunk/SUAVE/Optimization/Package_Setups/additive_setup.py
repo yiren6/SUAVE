@@ -191,8 +191,8 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
                
             opt = pyOpt.pyALPSO.ALPSO()    
             #opt.setOption('SwarmSize', value=40)
-            opt.setOption('maxOuterIter',value=10)
-            opt.setOption('maxInnerIter',value=6)
+            opt.setOption('maxOuterIter',value=20)
+            #opt.setOption('maxInnerIter',value=6)
             opt.setOption('seed',value=1.)
             #opt.setOption('etol',value=1.)
             
@@ -370,7 +370,7 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     
     fhat  = obj[0] + obj_addition
     EI    = (fstar-fhat)*norm.cdf((fstar-fhat)/obj_sigma) + obj_sigma*norm.pdf((fstar-fhat)/obj_sigma)
-    const = const + cons_addition
+    const = -(const + cons_addition)
     const = const.tolist()[0]
 
     print 'Inputs'
@@ -427,12 +427,13 @@ def expected_improvement_carpet(lbs,ubs,problem,obj_surrogate,cons_surrogate,fst
     
     num_levels = 20
     EI = np.log(EI)
+    print np.min(EI[EI!=-np.inf])
     if np.min(EI[EI!=-np.inf]) > -100:
         levals = np.linspace(np.min(EI[EI!=-np.inf]),np.max(EI),num_levels)
     else:
         levals = np.linspace(-40,np.max(EI),num_levels)    
     plt.figure(2)
-    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2)
+    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2,levels=levals)
     cbar = plt.colorbar(CS)
     cbar.ax.set_ylabel('Expected Improvement')    
     
