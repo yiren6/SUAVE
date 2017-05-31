@@ -472,7 +472,7 @@ class Trust_Region_Optimization(Data):
             self.design_variable_history.append([xOpt_lo,fOpt_hi])
             
             # hard convergence check
-            if (accepted==1 and np.isclose(fOpt_min[0],fOpt_hi[0],rtol=1e-5,atol=1e-12)==1):
+            if (accepted==1 and np.isclose(f[1][-1],fOpt_hi[0],rtol=1e-5,atol=1e-12)==1):
                 print 'Hard convergence reached'
                 f_out.write('Hard convergence reached')
                 f_out.close()
