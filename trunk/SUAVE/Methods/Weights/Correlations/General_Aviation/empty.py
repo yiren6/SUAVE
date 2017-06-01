@@ -291,7 +291,7 @@ def empty(vehicle):
     furnishings.mass_properties.mass                                 = output.systems_breakdown.furnish
     avionics.mass_properties.mass                                    = output.systems_breakdown.avionics              
    
-    fuel.mass_properties.mass                                        = output.fuel
+    #fuel.mass_properties.mass                                        = output.fuel
     hydraulics.mass_properties.mass                                  = output.systems_breakdown.hydraulics
     
     if has_air_conditioner:

@@ -24,7 +24,7 @@ def set_values(dictionary,input_dictionary,converted_values,aliases):
         for jj in xrange(0,len(aliases)):
             if provided_names[ii] == aliases[jj][0]:
                 pointer.append(aliases[jj][1])
-
+    
     for ii in xrange(0,len(pointer)):
         pointers = pointer[ii][:]
         if isinstance(pointers,str):

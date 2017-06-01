@@ -62,17 +62,25 @@ class Propulsor_Battery_Series_Hybrid(Propulsor):
       
         
         Pe = results.power - engine.outputs.power*self.generator_efficiency
-        
-        pbat=-Pe/(self.motor_efficiency*self.electronics_efficiency)
      
+        #handle overcharged battery
+    
+
+        pbat = -Pe/(self.motor_efficiency*self.electronics_efficiency)
         battery_logic            = Data()
         battery_logic.power_in   = pbat
         battery_logic.current    = 90.  #use 90 amps as a default for now; will change this for higher fidelity methods
         
         battery.inputs           = battery_logic
-        tol                      = 1e-6
         battery.energy_calc(numerics)
-    
+        #now handle overcharge
+        for j in range(len(pbat)):
+            if battery.current_energy[j]/battery.max_energy>.95:
+                if pbat[j]>0: 
+                    battery.inputs.power_in[j] = 0
+             
+        
+        
         #allow for mass gaining batteries
        
         try:
@@ -87,10 +95,10 @@ class Propulsor_Battery_Series_Hybrid(Propulsor):
         battery_draw                         = battery.inputs.power_in
         battery_energy                       = battery.current_energy
                                                
-        conditions.propulsion.vehicle_power  = results.power
-        conditions.propulsion.battery_draw   = battery_draw
-        conditions.propulsion.engine_power   = engine.outputs.power
-        conditions.propulsion.battery_energy = battery_energy
+        conditions.propulsion.vehicle_power   = results.power
+        conditions.propulsion.battery_draw    = battery_draw
+        conditions.propulsion.generator_power = engine.outputs.power
+        conditions.propulsion.battery_energy  = battery_energy
         #propulsor itself may have a mass flow rate
         results.vehicle_mass_rate += mdot
         

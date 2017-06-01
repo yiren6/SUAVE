@@ -15,10 +15,12 @@ from SUAVE.Methods.Utilities.soft_max import soft_max
 #  Initialize from Energy and Power
 # ----------------------------------------------------------------------
 
-def initialize_from_energy_and_power(battery, energy, power, max='hard'):
+def initialize_from_energy_and_power(battery, energy, power, max='soft'):
     
     energy_mass = energy/battery.specific_energy
     power_mass  = power/battery.specific_power
+    
+   
     
     if max=='soft': #use softmax function (makes it differentiable)
         mass=soft_max(energy_mass,power_mass)

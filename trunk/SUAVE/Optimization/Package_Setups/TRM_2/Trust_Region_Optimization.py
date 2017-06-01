@@ -130,6 +130,12 @@ class Trust_Region_Optimization(Data):
             g    = [None]*self.fidelity_levels
             dg   = [None]*self.fidelity_levels            
             
+           
+           
+           
+           
+            
+            
             for level in self.evaluation_order:
                 problem.fidelity_level = level
                 res = self.evaluate_model(problem,x,scaled_constraints)
@@ -137,13 +143,16 @@ class Trust_Region_Optimization(Data):
                 df[level-1] = res[1]    # objective derivate vector
                 g[level-1]  = res[2]    # constraints vector
                 dg[level-1] = res[3]    # constraints jacobian
-                
+            
+     
+
+            
             if iterations == 0:
                 self.objective_history.append(f[0])
                 self.constraint_history.append(g[0])
                 
             # Calculate correction
-         
+            print 'x = ', x
             corrections = self.calculate_correction(f,df,g,dg,tr)
             
             # Calculate constraint violations
@@ -194,7 +203,8 @@ class Trust_Region_Optimization(Data):
             
             
             problem.fidelity_level = 1
-            if self.gradients == 'FD':
+            if self.gradients == 'FD' or iterations<1:
+                print 'evaluating FD opt'
                 outputs = opt(opt_prob, sens_type='FD',problem=problem,corrections=corrections,tr=tr)#, sens_step = sense_step)  
             else:
                 outputs = opt(opt_prob, sens_type=self.problem_derivative_model, problem=problem, corrections=corrections,tr=tr)
@@ -222,7 +232,7 @@ class Trust_Region_Optimization(Data):
             print 'fOpt_lo = ', fOpt_lo
             print 'xOpt_lo = ', xOpt_lo
             print 'gOpt_lo = ', gOpt_lo
-           
+
                        
             # Evaluate high-fidelity at optimum
             problem.fidelity_level = np.max(self.fidelity_levels)
@@ -279,7 +289,7 @@ class Trust_Region_Optimization(Data):
                 print 'Trust region update rejected (filter)\n'        
             
             # Update Trust Region Size
-            print tr
+        
             tr_size_previous = tr.size
             tr_action = 0 # 1: shrink, 2: no change, 3: expand
             if( not accepted ): # shrink trust region
@@ -328,6 +338,7 @@ class Trust_Region_Optimization(Data):
             print iterations
             print x
             print fOpt_hi
+      
             aa = 0
             
         print 'Max iteration limit reached'
@@ -410,7 +421,7 @@ class Trust_Region_Optimization(Data):
         
   
     def problem_derivative_model(self,x, f= None, g = None,problem=None,corrections=None,tr=None): #f and g not necessary here
-     
+        print 'entering problem derivative model'
 
         duplicate_flag = False
         if duplicate_flag == False:
@@ -441,6 +452,7 @@ class Trust_Region_Optimization(Data):
         print 'df = ', df
         print 'g = ', g
         print 'dg = ', dg
+        
         nr = 1 + len(g[0])
         nc = len(df[0])
         

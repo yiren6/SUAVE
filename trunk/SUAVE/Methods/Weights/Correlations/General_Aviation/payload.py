@@ -44,14 +44,15 @@ def payload(TOW, empty, num_pax, wt_cargo, wt_passenger = 225.*Units.lbs,wt_bagg
     wt_pax     = wt_passenger * num_pax 
     wt_bag     = wt_baggage * num_pax
     wt_payload = wt_pax + wt_bag + wt_cargo
-    wt_fuel    = TOW - wt_payload - empty
+    #wt_fuel    = TOW - wt_payload - empty
     
     # packup outputs
     output = Data()
     output.payload = wt_payload
     output.pax     = wt_pax   
     output.bag     = wt_bag
-    output.fuel    = wt_fuel
+    #output.fuel    = wt_fuel
+    
     output.empty   = empty
   
     return output

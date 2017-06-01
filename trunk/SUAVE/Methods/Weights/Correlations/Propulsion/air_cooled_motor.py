@@ -36,5 +36,5 @@ def air_cooled_motor(max_power, kwt2=1.96, xwt=.8897):
     """    
     
     mass = kwt2*((max_power/Units.kW)**xwt) * Units.pounds #weight in lbs.
-    
+  
     return mass

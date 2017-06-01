@@ -9,8 +9,5 @@ import Climb
 import Descent
 import Ground
 import Hover
-<<<<<<< HEAD
 import Single_Point
-=======
-import Single_Point
->>>>>>> 99429ea978cbfbb14c891432d8b3163ed931bc38
+

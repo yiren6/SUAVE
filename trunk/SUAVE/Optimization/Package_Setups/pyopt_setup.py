@@ -120,6 +120,7 @@ def Pyopt_Solve(problem,solver='SNOPT',FD='single', sense_type = 'SUAVE', sense_
         
     elif solver == 'SNOPT' or solver == 'SLSQP':
         if sense_type == 'SUAVE':
+            problem.finite_difference_step = sense_step
             outputs = opt(opt_prob, sens_type = problem.finite_difference, sens_step = sense_step)
         else:
             outputs = opt(opt_prob, sens_type = sense_type, sens_step = sense_step)
