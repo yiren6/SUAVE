@@ -11,7 +11,7 @@ def initialize_conditions(segment,state):
     
     # unpack
     alt        = segment.altitude
-    air_speed  = segment.air_speed
+    air_speed  = segment.air_speed       
     conditions = state.conditions 
     
     # check for initial altitude
