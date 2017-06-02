@@ -370,7 +370,8 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     
     fhat  = obj[0] + obj_addition
     EI    = (fstar-fhat)*norm.cdf((fstar-fhat)/obj_sigma) + obj_sigma*norm.pdf((fstar-fhat)/obj_sigma)
-    const = -(const + cons_addition)
+    const = const + cons_addition
+    const[:,2][0] = -const[:,2][0]
     const = const.tolist()[0]
 
     print 'Inputs'
@@ -380,7 +381,7 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
     print 'Con'
     print const
         
-    return -np.log(EI),const,fail
+    return -EI,const,fail
 
 def expected_improvement_carpet(lbs,ubs,problem,obj_surrogate,cons_surrogate,fstar):
 
