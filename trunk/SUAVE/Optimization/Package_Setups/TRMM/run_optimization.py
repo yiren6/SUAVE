@@ -15,6 +15,7 @@ import subprocess
 
 import numpy as np
 
+import pyOpt
 from pyOpt import Optimization
 from pyOpt import SNOPT
 
