@@ -15,9 +15,12 @@ import subprocess
 
 import numpy as np
 
-import pyOpt
-from pyOpt import Optimization
-from pyOpt import SNOPT
+try:
+    import pyOpt
+    from pyOpt import Optimization
+    from pyOpt import SNOPT
+except:
+    pass
 
 import market as M
 import user_setup

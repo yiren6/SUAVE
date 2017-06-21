@@ -1,7 +1,10 @@
 import numpy as np
 import copy
 import SUAVE
-import pyOpt
+try:
+    import pyOpt
+except:
+    pass
 import sklearn
 from sklearn import gaussian_process
 from SUAVE.Core import Units, Data

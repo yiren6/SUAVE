@@ -2,7 +2,10 @@ import numpy as np
 import copy
 import SUAVE
 import Trust_Region
-import pyOpt
+try:
+    import pyOpt
+except:
+    pass
 from SUAVE.Core import Units, Data
 from SUAVE.Optimization import helper_functions as help_fun
 
