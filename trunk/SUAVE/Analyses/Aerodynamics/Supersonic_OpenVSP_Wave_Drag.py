@@ -1,4 +1,4 @@
-# Supersonic_Zero.py
+# Supersonic_OpenVSP_Wave_Drag.py
 # 
 # Created:            T. MacDonald
 # Modified: Apr 2017, T. MacDonald
@@ -25,18 +25,11 @@ import numpy as np
 # ----------------------------------------------------------------------
 
 class Supersonic_OpenVSP_Wave_Drag(Markup):
-    """ SUAVE.Attributes.Aerodynamics.Fidelity_Zero
-        aerodynamic model that builds a surrogate model for clean wing 
-        lift, using vortex lattic, and various handbook methods
-        for everything else
-        
-        this class is callable, see self.__call__
-        
-    """
+
     
     def __defaults__(self):
         
-        self.tag = 'OpenVSP_Supersonic'
+        self.tag = 'Supersonic_OpenVSP_Wave_Drag'
         
         # correction factors
         settings =  self.settings
@@ -91,7 +84,7 @@ class Supersonic_OpenVSP_Wave_Drag(Markup):
         
         # Remove old volume drag data so that new data can be appended without issues
         try:
-            os.remove('volume_drag_data.npy')  
+            os.remove('volume_drag_data_' + self.geometry.tag + '.npy')  
         except:
             pass
         

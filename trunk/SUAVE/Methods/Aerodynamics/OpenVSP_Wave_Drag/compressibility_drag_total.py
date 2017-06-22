@@ -103,7 +103,7 @@ def compressibility_drag_total(state,settings,geometry):
         drag105_total = drag105_total + cdc_l
         
     try:
-        old_array = np.load('volume_drag_data.npy')
+        old_array = np.load('volume_drag_data_' + geometry.tag + '.npy')
         file_exists = True
     except:
         file_exists = False
@@ -112,14 +112,14 @@ def compressibility_drag_total(state,settings,geometry):
     if np.any(old_array[:,0]==1.05):
         cd_c_v = np.array([[float(old_array[old_array[:,0]==1.05,1])]])
     else:    
-        #cd_c_v = wave_drag_volume(conditions,geometry, True)
-        cd_c_v = np.nan
+        cd_c_v = wave_drag_volume(conditions,geometry, True)
+        #cd_c_v = np.nan
     
     if file_exists:
         pass
     else:
         new_save_row = np.array([[1.05,cd_c_v]])
-        np.save('volume_drag_data.npy', new_save_row)    
+        np.save('volume_drag_data_' + geometry.tag + '.npy', new_save_row)    
     
     
     

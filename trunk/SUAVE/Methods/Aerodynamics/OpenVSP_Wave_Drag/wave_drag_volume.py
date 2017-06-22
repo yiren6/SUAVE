@@ -54,18 +54,18 @@ def wave_drag_volume(conditions,geometry,flag105,num_slices=20,num_rots=10):
     # the file below is effectively a global variable
     # different method should be used for a release version
     for ii,mach in enumerate(Mc):
-        if mach >= 1.05:
-            old_array = np.load('volume_drag_data.npy')
-            if np.any(old_array[:,0]==mach):
-                cd_w = np.array([[float(old_array[old_array[:,0]==mach,1])]])
+        if mach[0] >= 1.05:
+            old_array = np.load('volume_drag_data_' + geometry.tag + '.npy')
+            if np.any(old_array[:,0]==mach[0]):
+                cd_w = np.array([[float(old_array[old_array[:,0]==mach[0],1])]])
             else:
                 vsp.SetDoubleAnalysisInput('WaveDrag', 'Mach', [float(mach)])
                 ridwd = vsp.ExecAnalysis('WaveDrag') 
                 cd_w = vsp.GetDoubleResults(ridwd,'CDWave')
                 cd_w = cd_w[0]*100./ref_area
-                new_save_row = np.array([[mach,cd_w]])
+                new_save_row = np.array([[mach[0],cd_w]])
                 comb_array = np.append(old_array,new_save_row,axis=0)
-                np.save('volume_drag_data.npy', comb_array)
+                np.save('volume_drag_data_' + geometry.tag + '.npy', comb_array)
             cd_w_all[ii] = cd_w
     
     return cd_w_all

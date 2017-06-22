@@ -50,11 +50,11 @@ def compute_component_centers_of_gravity(vehicle, compute_propulsor_origin = Tru
         print "no vertical stabilizer"
    
     # need to correct calculations for propulsor center of gravity
-    #propulsor_name     = vehicle.propulsors.keys()[0]
-    #propulsor          = vehicle.propulsors[propulsor_name]    
-    #if compute_propulsor_origin == True:
-        #propulsor.origin[0][0]                               = wing.origin[0] + mac_le_offset/2.-(3./4.)*propulsor.engine_length
-    #propulsor.mass_properties.center_of_gravity[0]          = propulsor.engine_length*.5
+    propulsor_name     = vehicle.propulsors.keys()[0]
+    propulsor          = vehicle.propulsors[propulsor_name]    
+    if compute_propulsor_origin == True:
+        propulsor.origin[0][0]                               = wing.origin[0] + mac_le_offset/2.-(3./4.)*propulsor.engine_length
+    propulsor.mass_properties.center_of_gravity[0]          = propulsor.engine_length*.5
 
     
    

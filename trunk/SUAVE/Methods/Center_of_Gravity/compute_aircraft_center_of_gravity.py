@@ -58,12 +58,7 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction):
         # ---------------------------------------------------------------------------------
         # configurations with fuselages (BWB, Tube and Wing)  
         # ---------------------------------------------------------------------------------
-        if vehicle.fuselages.keys() != []: 
-                # fuel
-                fuel_cg                   = fuel.mass_properties.center_of_gravity
-                fuel_moment               = (fuel.origin+fuel_cg)*fuel.mass_properties.mass                
-                fuse_key           = vehicle.fuselages.keys()[0] #['fuselage']
-                fuselage           = vehicle.fuselages[fuse_key]            
+        if vehicle.fuselages.keys() != []:           
                 
                 # Control Sytems
                 control_systems    = vehicle.control_systems                
@@ -81,7 +76,13 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction):
                 fuel               = vehicle.fuel
                 apu                = vehicle.apu
                 hydraulics         = vehicle.hydraulics
-                optionals          = vehicle.optionals     
+                optionals          = vehicle.optionals    
+                
+                # fuel
+                fuel_cg                   = fuel.mass_properties.center_of_gravity
+                fuel_moment               = (fuel.origin+fuel_cg)*fuel.mass_properties.mass                
+                fuse_key           = vehicle.fuselages.keys()[0] #['fuselage']
+                fuselage           = vehicle.fuselages[fuse_key]                  
                  
                 # Fuselage
                 fuselage_cg               = fuselage.mass_properties.center_of_gravity

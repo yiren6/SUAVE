@@ -1,9 +1,7 @@
 # Vortex_Lattice.py
 #
-# Created:  Trent, Nov 2013
-# Modified: Trent, Anil, Tarik, Feb 2014
-# Modified: Trent, Jan 2014  
-# Modified: Feb 2016, Andrew Wendorff
+# Created:  Nov 2013, T. Lukaczyk
+# Modified: Apr 2017, T. MacDonald
 
 
 # ----------------------------------------------------------------------
