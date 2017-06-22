@@ -53,7 +53,7 @@ def wave_drag_lift(conditions,configuration,wing,vehicle_ref):
     else:
         # get wing specific CL
         #CL = conditions.aerodynamics.lift_coefficient * 1.0
-        CL = conditions.aerodynamics.lift_breakdown.inviscid_wings_lift_each[wing.tag]
+        CL = conditions.aerodynamics.lift_breakdown.inviscid_wings_lift[wing.tag]
     
     # Computations
     x = np.pi*ARL/4

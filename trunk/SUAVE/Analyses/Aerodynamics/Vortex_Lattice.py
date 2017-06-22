@@ -110,18 +110,19 @@ class Vortex_Lattice(Aerodynamics):
         wings_lift_model = surrogates.lift_coefficient
         
         # inviscid lift of wings only
-        inviscid_wings_lift                                        = wings_lift_model(AoA)
-        conditions.aerodynamics.lift_breakdown.inviscid_wings_lift = inviscid_wings_lift
-        state.conditions.aerodynamics.lift_coefficient             = inviscid_wings_lift
+        inviscid_wings_lift                                              = Data()
+        inviscid_wings_lift.total                                        = wings_lift_model(AoA)
+        conditions.aerodynamics.lift_breakdown.inviscid_wings_lift       = Data()
+        conditions.aerodynamics.lift_breakdown.inviscid_wings_lift.total = inviscid_wings_lift.total
+        state.conditions.aerodynamics.lift_coefficient                   = inviscid_wings_lift.total
         
-        inviscid_wings_lift_each = Data()
-        conditions.aerodynamics.lift_breakdown.inviscid_wings_lift_each = Data()
+        # store model for lift coefficients of each wing
         state.conditions.aerodynamics.lift_coefficient_wing             = Data()        
         for wing in geometry.wings.keys():
             wings_lift_model = surrogates.wing_lift_coefficients[wing]
-            inviscid_wings_lift_each[wing] = wings_lift_model(AoA)
-            conditions.aerodynamics.lift_breakdown.inviscid_wings_lift_each[wing] = inviscid_wings_lift_each[wing]
-            state.conditions.aerodynamics.lift_coefficient_wing[wing]             = inviscid_wings_lift_each[wing]
+            inviscid_wings_lift[wing] = wings_lift_model(AoA)
+            conditions.aerodynamics.lift_breakdown.inviscid_wings_lift[wing] = inviscid_wings_lift[wing]
+            state.conditions.aerodynamics.lift_coefficient_wing[wing]        = inviscid_wings_lift[wing]
 
         return inviscid_wings_lift
 
@@ -181,7 +182,6 @@ class Vortex_Lattice(Aerodynamics):
             wing_cl_surrogates[wing] = np.poly1d(np.polyfit(X_data, wing_CL_data[wing] ,1))
 
 
-        #Interpolation = Fidelity_Zero.Interpolation
         self.surrogates.lift_coefficient = cl_surrogate
         self.surrogates.wing_lift_coefficients = wing_cl_surrogates
 

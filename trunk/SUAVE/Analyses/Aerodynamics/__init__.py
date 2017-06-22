@@ -15,7 +15,6 @@ from SU2_inviscid     import SU2_inviscid
 from SU2_Euler_Super  import SU2_Euler_Super
 from SU2_inviscid_Super import SU2_inviscid_Super
 from Supersonic_OpenVSP_Wave_Drag import Supersonic_OpenVSP_Wave_Drag
-from MF_Aero_Test_Fidelity import MF_Aero_Test_Fidelity
 
 import Surrogates
 

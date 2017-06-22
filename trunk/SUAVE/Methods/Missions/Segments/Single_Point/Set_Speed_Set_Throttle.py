@@ -1,7 +1,7 @@
-# Set_Speed_Set_Altitude.py
+# Set_Speed_Set_Throttle.py
 # 
 # Created:  Mar 2017, T. MacDonald
-# Modified: 
+# Modified: Jun 2017, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Initialize Conditions
@@ -12,6 +12,7 @@ def initialize_conditions(segment,state):
     # unpack
     alt        = segment.altitude
     air_speed  = segment.air_speed
+    throttle   = segment.throttle
     conditions = state.conditions 
     
     # check for initial altitude
@@ -24,6 +25,7 @@ def initialize_conditions(segment,state):
     state.conditions.freestream.altitude[:,0]             = alt
     state.conditions.frames.inertial.position_vector[:,2] = -alt # z points down
     state.conditions.frames.inertial.velocity_vector[:,0] = air_speed
+    state.conditions.propulsion.throttle[:,0]             = throttle
     
 def update_weights(segment,state):
     
