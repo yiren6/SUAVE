@@ -1,7 +1,7 @@
 # Nexus.py
 # 
 # Created:  Jul 2015, E. Botero 
-# Modified: Feb 2015, M. Vegh
+# Modified: Apr 2017, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -37,6 +37,7 @@ class Nexus(Data):
         
         self.unpack_inputs(x)
         # This function calls really_evaluate
+        # Check if last call was the same
         if self.has_key('fidelity_level'):
             if np.all(self.optimization_problem.inputs==self.last_inputs) \
                and self.last_fidelity == self.fidelity_level:

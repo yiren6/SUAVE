@@ -1,7 +1,7 @@
 # write_vsp_mesh.py
 # 
 # Created:  Oct 2016, T. MacDonald
-# Modified: Jan 2017, T. MacDonald
+# Modified: Feb 2017, T. MacDonald
 
 try:
     import vsp_g as vsp

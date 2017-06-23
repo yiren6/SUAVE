@@ -1,7 +1,7 @@
 # compressibility_drag_total.py
 # 
 # Created:  Aug 2014, T. MacDonald
-# Modified: Jan 2016, E. Botero
+# Modified: Jun 2017, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -63,7 +63,6 @@ def compressibility_drag_total(state,settings,geometry):
     
     # Use the vehicle for drag coefficients
     Sref_main = geometry.reference_area
-    wing_ref  = geometry.wings.main_wing.areas.reference
     
 
     # Iterate through wings
@@ -132,19 +131,12 @@ def compressibility_drag_total(state,settings,geometry):
 
     # Fuselage wave drag
     if len(main_fuselage) > 0:
-        fuse_drag[mach >= 1.05] = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,wing_ref)
+        fuse_drag[mach >= 1.05] = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,Sref_main)
     else:
         raise ValueError('Main fuselage does not have a total length')
 
     # Propulsor wave drag	
-    prop_drag[mach >= 1.05] = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,wing_ref)*propulsor.number_of_engines
-
-    # Pack values
-    #cd_c[mach >= 1.05] = cd_c[mach >= 1.05] + fuse_drag[mach >= 1.05]
-    #cd_c[mach >= 1.05] = cd_c[mach >= 1.05] + prop_drag[mach >= 1.05]   
-    
-    fuse_drag = fuse_drag*wing_ref/Sref_main
-    prop_drag = prop_drag*wing_ref/Sref_main
+    prop_drag[mach >= 1.05] = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,Sref_main)*propulsor.number_of_engines
     
     drag_breakdown.compressible[main_fuselage.tag] = fuse_drag
     drag_breakdown.compressible[propulsor.tag] = prop_drag
@@ -249,7 +241,7 @@ def wave_drag(conditions,configuration,main_fuselage,propulsor,wing,num_engines,
 
     # Calculate wing values at all mach numbers
     # Note that these functions arrange the supersonic values at the beginning of the array
-    cd_lift_wave = wave_drag_lift(conditions,configuration,wing,Sref_main)
+    cd_lift_wave = wave_drag_lift(conditions,configuration,wing)
     cd_volume_wave = wave_drag_volume(conditions,configuration,wing)
 
     # Pack supersonic results into correct elements

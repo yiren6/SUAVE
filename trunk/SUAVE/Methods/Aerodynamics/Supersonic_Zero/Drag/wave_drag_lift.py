@@ -15,7 +15,7 @@ from SUAVE.Analyses import Results
 #   Wave Drag Lift
 # ----------------------------------------------------------------------
 
-def wave_drag_lift(conditions,configuration,wing,vehicle_ref):
+def wave_drag_lift(conditions,configuration,wing):
     """ SUAVE.Methods.wave_drag_lift(conditions,configuration,wing)
         computes the wave drag due to lift 
         Based on http://adg.stanford.edu/aa241/drag/ssdragcalc.html
@@ -52,7 +52,6 @@ def wave_drag_lift(conditions,configuration,wing,vehicle_ref):
         CL = np.zeros_like(conditions.aerodynamics.lift_coefficient)
     else:
         # get wing specific CL
-        #CL = conditions.aerodynamics.lift_coefficient * 1.0
         CL = conditions.aerodynamics.lift_breakdown.inviscid_wings_lift[wing.tag]
     
     # Computations

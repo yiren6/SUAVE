@@ -1,7 +1,7 @@
 # vsp_write.py
 # 
 # Created:  Jul 2016, T. MacDonald
-# Modified: Jan 2017, T. MacDonald
+# Modified: Jun 2017, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -239,6 +239,7 @@ def write(vehicle,tag):
         origins   = turbofan.origin
         bpr       = turbofan.bypass_ratio
         
+        # True will make a biconvex body, false will make a flow-through subsonic nacelle
         if turbofan.has_key('OpenVSP_simple'):
             simple_flag = turbofan.OpenVSP_simple
         else:
@@ -260,7 +261,6 @@ def write(vehicle,tag):
             vsp.SetParmVal(nac_id,'Y_Location','XForm',y)
             vsp.SetParmVal(nac_id,'Z_Location','XForm',z)
             vsp.SetParmVal(nac_id,'Abs_Or_Relitive_flag','XForm',vsp.ABS)
-            #vsp.SetParmVal(nac_id,'OrderPolicy','Design',1.) 
             vsp.SetParmVal(nac_id,'Origin','XForm',0.5)            
             
             if simple_flag == True:
@@ -280,9 +280,7 @@ def write(vehicle,tag):
             
                 # Length and overall diameter
                 vsp.SetParmVal(nac_id,"Length","Design",length)
-                #vsp.SetParmVal(nac_id,'Abs_Or_Relitive_flag','XForm',vsp.ABS)
                 vsp.SetParmVal(nac_id,'OrderPolicy','Design',1.) 
-                #vsp.SetParmVal(nac_id,'Origin','XForm',0.5)
                 vsp.SetParmVal(nac_id,'Z_Rotation','XForm',180.)
                 
                 xsecsurf = vsp.GetXSecSurf(nac_id,0)
@@ -323,8 +321,7 @@ def write(vehicle,tag):
         # Figure out the location x location of each section, 3 sections, end of nose, wing origin, and start of tail
         
         x1 = n_fine*width/length
-        #x2 = (w_origin[0]+w_c_4)/length
-        x2 = 0.5
+        x2 = (w_origin[0]+w_c_4)/length
         x3 = 1-t_fine*width/length
         
         fuse_id = vsp.AddGeom("FUSELAGE") 
@@ -377,8 +374,6 @@ def write(vehicle,tag):
         vsp.SetParmVal(fuse_id, "Ellipse_Height", "XSecCurve_2", height2);
         vsp.SetParmVal(fuse_id, "Ellipse_Height", "XSecCurve_3", height3);   
     
-    # for wave drag testing
-    vsp.SetParmVal(fuse_id,"Tess_W","Shape",17)
     # Write the vehicle to the file
     
     vsp.WriteVSPFile(tag + ".vsp3")

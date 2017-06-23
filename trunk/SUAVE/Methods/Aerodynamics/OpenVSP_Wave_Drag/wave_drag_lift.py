@@ -1,8 +1,7 @@
 # wave_drag_lift.py
 # 
 # Created:  Jun 2014, T. Macdonald
-# Modified: Jul 2014, T. Macdonald
-#           Jan 2016, E. Botero
+# Modified: May 2017, T. Macdonald
 
 # ----------------------------------------------------------------------
 #  Imports

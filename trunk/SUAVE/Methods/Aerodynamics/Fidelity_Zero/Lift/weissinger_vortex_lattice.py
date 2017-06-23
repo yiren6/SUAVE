@@ -167,24 +167,6 @@ def weissinger_vortex_lattice(conditions,configuration,wing):
         
         Cl = 0.0
         Cd = 0.0   
-    
-    #if wing.tag == 'main_wing':
-        #a = np.ones([1,5])*span
-        #new = np.vstack((a,Ac))
-        ##new = np.array([[span,A[0,0]]])
-        #try:
-            #base_array = np.load('vortex_test.npy')
-            ##if np.any(base_array[:,0]==span):
-                ##pass
-            #if base_array[0,0]==span:
-                #pass            
-            #else:
-                #new_write = np.vstack((new,base_array))
-                #np.save('vortex_test.npy',new_write)
-                #print span
-        #except IOError:
-            #np.save('vortex_test.npy',new)
-            #print span
 
     return Cl, Cd
 

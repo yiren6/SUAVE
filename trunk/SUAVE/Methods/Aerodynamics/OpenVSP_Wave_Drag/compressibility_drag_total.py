@@ -1,7 +1,7 @@
 # compressibility_drag_total.py
 # 
 # Created:  Aug 2014, T. MacDonald
-# Modified: Jan 2016, E. Botero
+# Modified: Jun 2017, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -12,8 +12,6 @@ from SUAVE.Analyses import Results
 from SUAVE.Core import (
     Data, Container,
 )
-from SUAVE.Methods.Aerodynamics.Supersonic_Zero.Drag import \
-     wave_drag_lift, wave_drag_volume, wave_drag_body_of_rev
 
 from wave_drag_lift import wave_drag_lift
 from wave_drag_volume import wave_drag_volume
@@ -113,7 +111,6 @@ def compressibility_drag_total(state,settings,geometry):
         cd_c_v = np.array([[float(old_array[old_array[:,0]==1.05,1])]])
     else:    
         cd_c_v = wave_drag_volume(conditions,geometry, True)
-        #cd_c_v = np.nan
     
     if file_exists:
         pass
@@ -121,10 +118,7 @@ def compressibility_drag_total(state,settings,geometry):
         new_save_row = np.array([[1.05,cd_c_v]])
         np.save('volume_drag_data_' + geometry.tag + '.npy', new_save_row)    
     
-    
-    
-    
-    
+
     drag105 = drag105_total + cd_c_v*np.ones(np.shape(Mc))
     drag99  = drag99_total
     cd_c_l  = np.array([[0.0]] * len(Mc))
@@ -152,23 +146,10 @@ def compressibility_drag_total(state,settings,geometry):
         
     cd_c_v = wave_drag_volume(conditions, geometry, False,num_slices=number_slices,num_rots=number_rotations)
         
-    ## this step is sketch, should be changed before release
-    #old_array = np.load('volume_drag_data.npy')
-    #if np.any(old_array[:,0]==conditions.freestream.mach_number[0,0]):
-        #cd_c_v = np.array([[float(old_array[old_array[:,0]==conditions.freestream.mach_number[0,0],1])]])      
-    #else:
-        #cd_c_v = wave_drag_volume(conditions, geometry, False)
-        #new_save_row = np.array([[conditions.freestream.mach_number[0,0],cd_c_v]])
-        #comb_array = np.append(old_array,new_save_row,axis=0)       
-        #np.save('volume_drag_data.npy', comb_array)
-        
-        
     cd_c[Mc >= 1.05] = cd_c_l[Mc >= 1.05] + cd_c_v[Mc >= 1.05]
 
     
-
-    
-    # Compute volume drag here
+    # Save drag breakdown
 
     drag_breakdown.compressible.total = cd_c
     drag_breakdown.compressible.total_volume = cd_c_v

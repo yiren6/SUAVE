@@ -1,8 +1,7 @@
 # wave_drag_volume.py
 # 
-# Created:  Tim MacDonald, 6/24/14
-# Modified: Tim MacDonald, 6/24/14
-# 
+# Created:  Jun 2014, T. Macdonald
+# Modified: Apr 2017, T. Macdonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -51,8 +50,7 @@ def wave_drag_volume(conditions,geometry,flag105,num_slices=20,num_rots=10):
         cd_w = cd_w[0]*100./ref_area # default ref area in VSP doesn't seem to have an easy change
         return cd_w
     
-    # the file below is effectively a global variable
-    # different method should be used for a release version
+    # Read data from file if possible, otherwise calculate new value
     for ii,mach in enumerate(Mc):
         if mach[0] >= 1.05:
             old_array = np.load('volume_drag_data_' + geometry.tag + '.npy')

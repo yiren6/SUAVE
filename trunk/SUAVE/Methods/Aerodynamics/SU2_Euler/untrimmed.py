@@ -1,7 +1,7 @@
 # untrimmed.py
 #
 # Created:  Jan 2014, T. Orra
-# Modified: Oct 2016, T. MacDonald  
+# Modified: Jun 2017, T. MacDonald  
 
 def untrimmed(state,settings,geometry):
 
@@ -12,17 +12,17 @@ def untrimmed(state,settings,geometry):
 
     # Various drag components
     if settings.use_CFD_drag is False:
-        parasite_total        = conditions.aerodynamics.drag_breakdown.parasite.total            
+        compressibility_total = conditions.aerodynamics.drag_breakdown.compressible.total    
         induced_total         = conditions.aerodynamics.drag_breakdown.induced.total  
-        invisid_total         = parasite_total + induced_total
+        invisid_total         = compressibility_total + induced_total
     else:
         invisid_total         = conditions.aerodynamics.drag_breakdown.inviscid.total
-    compressibility_total = conditions.aerodynamics.drag_breakdown.compressible.total         
+    parasite_total        = conditions.aerodynamics.drag_breakdown.parasite.total              
     miscellaneous_drag    = conditions.aerodynamics.drag_breakdown.miscellaneous.total 
 
     # Untrimmed drag
     aircraft_untrimmed = invisid_total        \
-        + compressibility_total \
+        + parasite_total \
         + miscellaneous_drag
     
     conditions.aerodynamics.drag_breakdown.untrimmed = aircraft_untrimmed

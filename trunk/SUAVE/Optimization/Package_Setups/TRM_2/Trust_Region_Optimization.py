@@ -116,7 +116,7 @@ class Trust_Region_Optimization(Data):
         #tr = Trust_Region.Trust_Region()
         #tr.initialize()
         x = np.array(x,dtype='float')
-        tr.set_center(x)
+        tr.center = x
         tr_size = tr.size
 
         trc = x # trust region center
