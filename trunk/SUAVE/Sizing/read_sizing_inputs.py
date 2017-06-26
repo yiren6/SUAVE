@@ -59,7 +59,6 @@ def format_input_data(data):
         numbers = line.split(' ')
         numbers_out=[]
         for number in numbers:
-            
             if number != ' ' or number != '\t':
                 numbers_out.append(float(number))
         

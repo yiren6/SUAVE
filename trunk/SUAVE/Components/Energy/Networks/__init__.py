@@ -25,3 +25,4 @@ from Series_Battery_Propeller_Hybrid_Interp import Series_Battery_Propeller_Hybr
 from Battery_Propeller import Battery_Propeller
 from Internal_Combustion_Propeller import Internal_Combustion_Propeller
 from Propulsor_Battery_Series_Hybrid import Propulsor_Battery_Series_Hybrid
+from Propulsor_Surrogate import Propulsor_Surrogate
