@@ -191,7 +191,7 @@ class Trust_Region_Optimization(Data):
                 sense_step = 1.4901161193847656e-08
                 slsqp_bnds = np.transpose(np.vstack([tr.lower_bound,tr.upper_bound]))
                 outputs, fx, its, imode, smode = sp.optimize.fmin_slsqp(wrapper,x,f_eqcons=eq_cons,f_ieqcons=ieq_cons,bounds=slsqp_bnds,iter=200, epsilon = sense_step, acc  = sense_step**2, full_output=True)
-                if (imode == 2 or imode == 4):
+                if (imode == 2 or imode == 4) or (imode == 9 and np.isnan(fx[0])):
                     feasible_flag = False
                     success_indicator = False
                 else:

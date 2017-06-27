@@ -41,17 +41,17 @@ def main():
     opt_prob.trust_region = tr
     TRM_opt = tro.Trust_Region_Optimization()
     TRM_opt.trust_region_max_iterations           = 20
-    TRM_opt.optimizer  = 'SNOPT'
+    TRM_opt.optimizer  = 'SLSQP'
     print 'Checking TRMM with no active constraints...'
-    outputs = TRM_opt.optimize(opt_prob,print_output=True)
+    outputs = TRM_opt.optimize(opt_prob,print_output=False)
     
     # ------------------------------------------------------------------
     #   Check Results
     # ------------------------------------------------------------------    
 
-    assert( outputs[0][0] == 0.4631250214633168 )
-    assert( outputs[1][0] == 0.32827758789062511 )
-    assert( outputs[1][1] == 0.10000833813898898 )  
+    assert( outputs[0][0] == 0.46312425982939409 )
+    assert( outputs[1][0] == 0.32827758789062461 )
+    assert( outputs[1][1] == 0.10000826246176589 )  
     
     # ------------------------------------------------------------------
     #   Active constraint
@@ -70,16 +70,17 @@ def main():
     opt_prob.trust_region = tr
     TRM_opt = tro.Trust_Region_Optimization()
     TRM_opt.trust_region_max_iterations           = 20
-    print 'Checking TRMM with one active constraint...'
+    TRM_opt.optimizer  = 'SLSQP'
+    print 'Checking TRMM with > constraint...'
     outputs = TRM_opt.optimize(opt_prob,print_output=False)
     
     # ------------------------------------------------------------------
     #   Check Results
     # ------------------------------------------------------------------    
 
-    assert( outputs[0][0] == 3.9992876426030648 )
-    assert( outputs[1][0] == -1.0011471271514893 )
-    assert( outputs[1][1] == 1.0056114973472992 )      
+    assert( outputs[0][0] == 2.6551249810501929 )
+    assert( outputs[1][0] == -0.97387695099099969 )
+    assert( outputs[1][1] == 1.0533935546874953 )      
     
     # ------------------------------------------------------------------
     #   Other active constraints
@@ -88,7 +89,7 @@ def main():
     opt_prob = problem_definition.problem()
     opt_prob.initialize()
     opt_prob.optimization_problem.constraints = np.array([
-        [ 'x2' , '<', -1., 1., Units.less],
+        [ 'x2' , '<', 10., 1., Units.less],
         [ 'x1' , '=', 2., 1., Units.less],
          ]) 
     
@@ -97,17 +98,47 @@ def main():
     tr = Trust_Region()
     opt_prob.trust_region = tr
     TRM_opt = tro.Trust_Region_Optimization()
-    TRM_opt.trust_region_max_iterations           = 20
-    print 'Checking TRMM with two active constraints...'
+    TRM_opt.trust_region_max_iterations           = 50
+    TRM_opt.optimizer  = 'SLSQP'
+    print 'Checking TRMM with = constraint...'
     outputs = TRM_opt.optimize(opt_prob,print_output=False)
     
     # ------------------------------------------------------------------
     #   Check Results
     # ------------------------------------------------------------------    
 
-    assert( outputs[0][0] == 2501.0000000000182 )
-    assert( outputs[1][0] == 2.0000000000000062 )
-    assert( outputs[1][1] == -0.99999999999999356 )          
+    assert( outputs[0][0] == 0.99999999653823579 )
+    assert( outputs[1][0] == 2.0 )
+    assert( outputs[1][1] == 4.0000019861033724 )        
+    
+    # ------------------------------------------------------------------
+    #   Other active constraints
+    # ------------------------------------------------------------------ 
+    
+    opt_prob = problem_definition.problem()
+    opt_prob.initialize()
+    opt_prob.optimization_problem.constraints = np.array([
+        [ 'x2' , '<', 10., 1., Units.less],
+        [ 'x1' , '<', .1, 1., Units.less],
+         ]) 
+    
+    #outputs = pyopt_setup.Pyopt_Solve(opt_prob,solver='SNOPT')
+    
+    tr = Trust_Region()
+    opt_prob.trust_region = tr
+    TRM_opt = tro.Trust_Region_Optimization()
+    TRM_opt.trust_region_max_iterations           = 50
+    TRM_opt.optimizer  = 'SLSQP'
+    print 'Checking TRMM with < constraint...'
+    outputs = TRM_opt.optimize(opt_prob,print_output=False)
+    
+    # ------------------------------------------------------------------
+    #   Check Results
+    # ------------------------------------------------------------------    
+
+    assert( outputs[0][0] == 388.82343202898346 )
+    assert( outputs[1][0] == -0.98721934861223404 )
+    assert( outputs[1][1] == -0.98721953801645423 )      
  
     return
 

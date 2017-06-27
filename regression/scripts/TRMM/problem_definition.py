@@ -22,8 +22,10 @@ class problem():
     def objective(self,xval):
         
         if self.fidelity_level == 1:
+            #obj = np.array([[xval[1]+xval[0]]])
             obj = np.array([[90*xval[1]**2 + (0.8 - xval[0])**2]])
         elif self.fidelity_level == 2:
+            #obj = np.array([[xval[1]+.9*xval[0]]])
             obj = np.array([[100*(xval[1] - xval[0]**2)**2 + (1 - xval[0])**2]])
             
         return obj
