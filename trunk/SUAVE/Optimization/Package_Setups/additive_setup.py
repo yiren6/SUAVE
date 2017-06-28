@@ -11,8 +11,15 @@ from SUAVE.Core import Units, Data
 from SUAVE.Optimization import helper_functions as help_fun
 from SUAVE.Methods.Utilities.latin_hypercube_sampling import latin_hypercube_sampling
 from scipy.stats import norm
+import os
+import sys
 
-def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,tolerance=1e-6,opt_type='basic',num_starts=3):
+def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=10,
+                   tolerance=1e-6,opt_type='basic',num_starts=3,print_output=True):
+    
+    if print_output == False:
+        devnull = open(os.devnull,'w')
+        sys.stdout = devnull    
     
     if num_fidelity_levels != 2:
         raise NotImplementedError
@@ -74,17 +81,6 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
     
     x_samples = latin_hypercube_sampling(len(x),num_samples,bounds=(lbd,ubd),criterion='center')
     
-    # Plot samples -----------------------------------------
-    import matplotlib.pyplot as plt
-    fig = plt.figure("2D Test Case",figsize=(8,6))
-    axes = plt.gca()
-    axes.scatter(x_samples[:,0],x_samples[:,1])
-    axes.set_xticks(np.linspace(lbd[0],ubd[0],num_samples+1))
-    axes.set_yticks(np.linspace(lbd[1],ubd[1],num_samples+1))
-    axes.grid()    
-    # ------------------------------------------------------
-    
-    
     f = np.zeros([num_fidelity_levels,num_samples])
     g = np.zeros([num_fidelity_levels,num_samples,len(scaled_constraints)])
     
@@ -111,33 +107,6 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         g_additive_surrogate_base = gaussian_process.GaussianProcessRegressor()
         g_additive_surrogate = g_additive_surrogate_base.fit(x_samples, g_diff)     
         
-        ## Plot Surrogates -------------------------------------------------------
-        #import matplotlib.pyplot as plt
-        #x1s = np.linspace(lbd[0],ubd[0],10)
-        #x2s = np.linspace(lbd[1],ubd[1],10)
-        #f_test = np.zeros([len(x1s),len(x2s)])
-        #g_test = np.zeros([len(x1s),len(x2s)])
-        #for ii,x1 in enumerate(x1s):
-            #for jj,x2 in enumerate(x2s):
-                #f_test[ii,jj] = f_additive_surrogate.predict([x1,x2])
-                #g_test[ii,jj] = g_additive_surrogate.predict([x1,x2])
-                
-        #fig = plt.figure('Objective Additive Surrogate Plot')    
-        #CS = plt.contourf(x2s,x1s,f_test, linewidths=2)
-        #cbar = plt.colorbar(CS)
-        #cbar.ax.set_ylabel('F Surrogate')
-        #plt.xlabel('Aspect Ratios')
-        #plt.ylabel('Wing Areas')   
-        
-        ### This will only plot properly if there is only one constraint
-        ##fig = plt.figure('Constraint Additive Surrogate Plot')    
-        ##CS = plt.contourf(x2s,x1s,g_test, linewidths=2)
-        ##cbar = plt.colorbar(CS)
-        ##cbar.ax.set_ylabel('G Surrogate')
-        ##plt.xlabel('Aspect Ratios')
-        ##plt.ylabel('Wing Areas')       
-        ## -----------------------------------------------------------------------
-        
         # Optimize corrected model
         
         # Chose method ---------------
@@ -146,6 +115,8 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
                                       obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)       
         
             x_eval = latin_hypercube_sampling(len(x),1,bounds=(lbd,ubd),criterion='random')[0]
+            
+            self.initialize_opt_val(obj,inp,lbd,ubd,x_eval,edge)
             
             for ii in xrange(len(obj)):
                 opt_prob.addObj('f',100) 
@@ -330,6 +301,8 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
     np.save('all_data.npy',np.vstack([x_samples[:,0],x_samples[:,1],f_diff,f[0,:],f[1,:]]))
     f_out.close()
     print fOpt,xOpt
+    if print_output == False:
+        sys.stdout = sys.__stdout__     
     return (fOpt,xOpt)
     
     
