@@ -1,3 +1,8 @@
+# Trust_Region.py
+#
+# Created:  Apr 2017, T. MacDonald
+# Modified: Jun 2017, T. MacDonald
+
 import SUAVE
 from SUAVE.Core import Data
 import numpy as np
@@ -14,17 +19,7 @@ class Trust_Region(Data):
         self.expand_threshold   = 0.75
         self.contraction_factor = 0.25
         self.expansion_factor   = 1.5
-    
-        self.soft_convergence_limit = 3
-        self.convergence_tolerance  = 0.0001
-        self.constraint_tolerance   = 1e-6
-    
-        self.approx_subproblem = 'direct'
-        self.merit_function    = 'penalty'
-        self.acceptance_test   = 'ratio'
-    
-        self.correction_type  = 'additive'
-        self.correction_order = 1
+        
         
     def evaluate_function(self,f,gviol):
         phi = f + gviol**2

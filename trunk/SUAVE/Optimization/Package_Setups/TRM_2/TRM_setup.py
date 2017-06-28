@@ -1,4 +1,4 @@
-# pyopt_setup.py
+# TRM_setup.py
 #
 # Created:  Jul 2015, E. Botero
 # Modified: Apr 2017, T. MacDonald

@@ -1,3 +1,8 @@
+# Trust_Region_Optimization.py
+#
+# Created:  Apr 2017, T. MacDonald
+# Modified: Jun 2017, T. MacDonald
+
 import numpy as np
 import copy
 import SUAVE
@@ -19,17 +24,15 @@ class Trust_Region_Optimization(Data):
         self.tag                                = 'TR_Opt'
         self.trust_region_max_iterations        = 30
         self.optimizer_max_iterations           = 30
-        self.soft_convergence_tolerance         = 1E-6
         self.convergence_tolerance              = 1E-6
-        self.optimizer_convergence_tolerance    = 1E-6  #used in SNOPT
-        self.optimizer_constraint_tolerance     = 1E-6  #used in SNOPT only
-        self.difference_interval                = 1E-6  #used in evaluating high fidelity case
-        self.optimizer_function_precision       = 1E-12 #used in SNOPT only
+        self.optimizer_convergence_tolerance    = 1E-6  # used in SNOPT
+        self.optimizer_constraint_tolerance     = 1E-6  # used in SNOPT
+        self.difference_interval                = 1E-6 
+        self.optimizer_function_precision       = 1E-12 # used in SNOPT
         self.trust_region_function_precision    = 1E-12
         self.optimizer_verify_level             = 0
-        self.fidelity_levels                    = 2  
-        self.evaluation_order                   = [1,2]       
-        self.relative_difference_history        = [] # for soft convergence
+        self.fidelity_levels                    = 2     # only two are currently supported
+        self.evaluation_order                   = [1,2] # currently this order is necessary for proper functionality   
         self.optimizer                          = 'SNOPT'
         
     def optimize(self,problem,print_output=False):
@@ -48,11 +51,11 @@ class Trust_Region_Optimization(Data):
         tr  = problem.trust_region
         
         # Set inputs
-        nam = inp[:,0] # Names
-        ini = inp[:,1] # Initials
-        bnd = inp[:,2] # X Bounds
-        scl = inp[:,3] # X Scale
-        typ = inp[:,4] # Type
+        nam = inp[:,0] # names
+        ini = inp[:,1] # initials
+        bnd = inp[:,2] # x bounds
+        scl = inp[:,3] # x scale
+        typ = inp[:,4] # type
     
         (x,scaled_constraints,x_low_bound,x_up_bound,con_up_edge,con_low_edge,name) = self.scale_vals(inp, con, ini, bnd, scl)
         
@@ -72,8 +75,7 @@ class Trust_Region_Optimization(Data):
             
             # History writing
             f_out.write('Iteration ----- ' + str(iterations) + '\n')
-            f_out.write('x0_center: ' + str(x[0]) + '\n')
-            f_out.write('x1_center: ' + str(x[1]) + '\n')
+            f_out.write('x_center: ' + str(x.tolist()) + '\n')
             f_out.write('tr size  : ' + str(tr.size) + '\n')   
             
             f    = [None]*self.fidelity_levels
@@ -91,11 +93,9 @@ class Trust_Region_Optimization(Data):
                 # History writing
                 f_out.write('Level    : ' + str(level) + '\n')
                 f_out.write('f        : ' + str(res[0][0]) + '\n')
-                f_out.write('df0      : ' + str(res[1][0]) + '\n')
-                f_out.write('df1      : ' + str(res[1][1]) + '\n') 
-                f_out.write('f for df0: ' + str(res[1][0]*self.difference_interval+res[0][0]) + '\n')
-                f_out.write('f for df1: ' + str(res[1][1]*self.difference_interval+res[0][0]) + '\n')
-            f_center = f[-1]
+                f_out.write('df       : ' + str(res[1].tolist()) + '\n')
+            # assumes high fidelity is last
+            f_center = f[-1][0][0]
                 
             # Calculate correction
             corrections = self.calculate_correction(f,df,g,dg,tr)
@@ -143,7 +143,7 @@ class Trust_Region_Optimization(Data):
                     feasible_flag = False
                 else:
                     feasible_flag = True
-                fOpt_corr = outputs[0][0,0]
+                fOpt_corr = outputs[0][0]
                 xOpt_corr = outputs[1]
                 gOpt_corr = np.zeros([1,len(con)])[0]  
                 for ii in xrange(len(con)):
@@ -178,7 +178,7 @@ class Trust_Region_Optimization(Data):
                     feasible_flag = False
                 else:
                     feasible_flag = True
-                fOpt_corr = fx
+                fOpt_corr = fx[0]
                 xOpt_corr = outputs
                 gOpt_corr = problem.all_constraints(outputs)
             else:
@@ -211,7 +211,7 @@ class Trust_Region_Optimization(Data):
                     xOpt_corr = con_outputs[1]
                     new_outputs = self.evaluate_corrected_model(x, problem=problem,corrections=corrections,tr=tr)
         
-                    fOpt_corr = np.array([new_outputs[0][0,0]])
+                    fOpt_corr = new_outputs[0][0][0]
                     gOpt_corr = np.zeros([1,len(con)])[0]   
                     for ii in xrange(len(con)):
                         gOpt_corr[ii] = new_outputs[1][ii]
@@ -223,7 +223,7 @@ class Trust_Region_Optimization(Data):
                     
                     xOpt_corr = outputs
                     new_outputs = self.evaluate_corrected_model(x, problem=problem,corrections=corrections,tr=tr)
-                    fOpt_corr = np.array([new_outputs[0][0,0]])
+                    fOpt_corr = new_outputs[0][0][0]
                     gOpt_corr = np.zeros([1,len(con)])[0]   
                     for ii in xrange(len(con)):
                         gOpt_corr[ii] = new_outputs[1][ii]
@@ -241,39 +241,14 @@ class Trust_Region_Optimization(Data):
             # Evaluate high-fidelity at optimum
             problem.fidelity_level = np.max(self.fidelity_levels)
             fOpt_hi, gOpt_hi = self.evaluate_model(problem,xOpt_corr,scaled_constraints,der_flag=False)
-            
+            fOpt_hi = fOpt_hi[0][0]
+        
             g_violation_opt_corr = self.calculate_constraint_violation(gOpt_corr,con_low_edge,con_up_edge)
             g_violation_opt_hi = self.calculate_constraint_violation(gOpt_hi,con_low_edge,con_up_edge)
             
             # Calculate ratio
             rho = self.accuracy_ratio(f_center,fOpt_hi, fOpt_corr, g_violation_hi_center, g_violation_opt_hi, 
-                                      g_violation_opt_corr,tr)
-            
-            ## Soft convergence test
-            #if( np.abs(fOpt_hi) <= self.trust_region_function_precision and np.abs(f_center) <= self.trust_region_function_precision ):
-                #relative_diff = 0
-            #elif( np.abs(fOpt_hi) <= self.trust_region_function_precision):
-                #relative_diff = (fOpt_hi - f_center)/f_center
-            #else:
-                #relative_diff = (fOpt_hi - f_center)/fOpt_hi
-            #self.relative_difference_history.append(relative_diff)
-            #diff_hist = self.relative_difference_history
-            
-            #ind1 = max(0,iterations-1-tr.soft_convergence_limit)
-            #ind2 = len(diff_hist) - 1
-            #converged = 1
-            #while ind2 >= ind1:
-                #if( np.abs(diff_hist[ind1]) > self.soft_convergence_tolerance ):
-                    #converged = 0
-                    #break
-                #ind1 += 1
-            #if( converged and len(self.relative_difference_history) >= tr.soft_convergence_limit):
-                #f_out.write('soft convergence reached')
-                #f_out.close()
-                #print 'Soft convergence reached'
-                #if print_output == False:
-                    #sys.stdout = sys.__stdout__              
-                #return outputs     
+                                      g_violation_opt_corr,tr)  
             
             # Acceptance Test
             accepted = 0
@@ -287,6 +262,7 @@ class Trust_Region_Optimization(Data):
                 print 'Trust region update rejected (filter)\n'        
             
             # Update Trust Region Size
+            print tr
             tr_action = self.update_tr_size(rho,tr,accepted)  
                 
             # Terminate if trust region too small
@@ -299,7 +275,8 @@ class Trust_Region_Optimization(Data):
                 return (fOpt_corr,xOpt_corr,'Trust region too small')
             
             # Terminate if solution is infeasible, no change is detected, and trust region does not expand
-            if( success_flag == False and tr_action < 3 and \
+            # SLSQP is not sufficiently robust for this check
+            if( success_flag == False and tr_action < 3 and self.optimizer != 'SLSQP' and\
                 np.sum(np.isclose(xOpt_corr,x,rtol=1e-15,atol=1e-14)) == len(x) ):
                 print 'Solution infeasible, no improvement can be made'
                 f_out.write('Solution infeasible, no improvement can be made')
@@ -309,10 +286,9 @@ class Trust_Region_Optimization(Data):
                 return (fOpt_corr,xOpt_corr,'Solution infeasible')      
             
             # History writing
-            f_out.write('x0 opt   : ' + str(xOpt_corr[0]) + '\n')
-            f_out.write('x1 opt   : ' + str(xOpt_corr[1]) + '\n')
-            f_out.write('low obj  : ' + str(fOpt_corr) + '\n')
-            f_out.write('hi  obj  : ' + str(fOpt_hi[0]) + '\n')
+            f_out.write('x opt    : ' + str(xOpt_corr.tolist()) + '\n')
+            f_out.write('low obj  : ' + str(fOpt_corr)          + '\n')
+            f_out.write('hi  obj  : ' + str(fOpt_hi)            + '\n')
             
             # Convergence check
             if (accepted==1 and (np.abs(f_center-fOpt_hi) < self.convergence_tolerance)):
@@ -330,7 +306,7 @@ class Trust_Region_Optimization(Data):
             
             print 'Iteration number: ' + str(iterations)
             print 'x value: ' + str(x.tolist())
-            print 'Objective value: ' + str(fOpt_hi[0][0])
+            print 'Objective value: ' + str(fOpt_hi)
         
         f_out.write('Max iteration limit reached')
         f_out.close()
@@ -346,7 +322,6 @@ class Trust_Region_Optimization(Data):
         df = np.zeros(np.shape(x))
         dg = np.zeros([np.size(cons),np.size(x)])
         
-        
         f  = problem.objective(x)
         g  = problem.all_constraints(x)
         if der_flag == False:
@@ -360,70 +335,58 @@ class Trust_Region_Optimization(Data):
             x_fd[ii] = x_fd[ii] + fd_step
             obj = problem.objective(x_fd)
             grad_cons = problem.all_constraints(x_fd)
-
             df[ii] = (obj - f)/fd_step
-
             for jj in xrange(len(cons)):
-                
-                dg[jj,ii] = (grad_cons[jj] - g[jj])/fd_step   
-     
-                         
+                dg[jj,ii] = (grad_cons[jj] - g[jj])/fd_step
         
         return (f,df,g,dg)
 
 
     def evaluate_corrected_model(self,x,problem=None,corrections=None,tr=None):
-        #duplicate_flag, obj, gradient = self.check_for_duplicate_evals(x)
-        duplicate_flag = False
-        if duplicate_flag == False:
-            obj   = problem.objective(x)
-            const = problem.all_constraints(x).tolist()
-            #const = []
-            fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
-            
-            A, b = corrections
-            x0   = tr.center
-            
-            obj   = obj + np.dot(A[0,:],(x-x0))+b[0]
-            const = const + np.matmul(A[1:,:],(x-x0))+b[1:]
-            const = const.tolist()
         
-            print 'Inputs'
-            print x
-            print 'Obj'
-            print obj
-            print 'Con'
-            print const
+        obj   = problem.objective(x)
+        const = problem.all_constraints(x).tolist()
+        fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
+        
+        A, b = corrections
+        x0   = tr.center
+        
+        obj   = obj + np.dot(A[0,:],(x-x0))+b[0]
+        const = const + np.matmul(A[1:,:],(x-x0))+b[1:]
+        const = const.tolist()
+    
+        print 'Inputs'
+        print x
+        print 'Obj'
+        print obj
+        print 'Con'
+        print const
             
         return obj,const,fail
     
+    
     def evaluate_constraints(self,x,problem=None,corrections=None,tr=None,lb=None,ub=None):
-        #duplicate_flag, obj, gradient = self.check_for_duplicate_evals(x)
-        duplicate_flag = False
-        if duplicate_flag == False:
-            obj   = problem.objective(x)
-            const = problem.all_constraints(x).tolist()
-            #const = []
-            fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
+
+        obj      = problem.objective(x) # evaluate the problem
+        const    = problem.all_constraints(x).tolist()
+        fail     = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
+        
+        A, b = corrections
+        x0   = tr.center
+        
+        const = const + np.matmul(A[1:,:],(x-x0))+b[1:]
+        const = const.tolist()
+        
+        # get the objective that matters here
+        obj_cons = self.calculate_constraint_violation(const,lb,ub)
+        const    = None
+        
+        print 'Inputs'
+        print x
+        print 'Cons violation'
+        print obj_cons         
             
-            A, b = corrections
-            x0   = tr.center
-            
-            obj   = obj + np.dot(A[0,:],(x-x0))+b[0]
-            const = const + np.matmul(A[1:,:],(x-x0))+b[1:]
-            const = const.tolist()
-            
-            obj = self.calculate_constraint_violation(const,lb,ub)
-            const = None
-            
-            print 'Inputs'
-            print x
-            print 'Obj'
-            print obj
-            print 'Con'
-            print const            
-            
-        return obj,const,fail    
+        return obj_cons,const,fail    
         
         
     def calculate_constraint_violation(self,gval,lb,ub):
@@ -456,8 +419,8 @@ class Trust_Region_Optimization(Data):
             
         corr = (A,b)
         
-        
-        return corr        
+        return corr   
+    
     
     def scale_vals(self,inp,con,ini,bnd,scl):
         
@@ -465,11 +428,11 @@ class Trust_Region_Optimization(Data):
         bnd_constraints = help_fun.scale_const_bnds(con)
         scaled_constraints = help_fun.scale_const_values(con,bnd_constraints)
 
-        x   = ini/scl        
+        x            = ini/scl        
         x_low_bound  = []
-        x_up_bound  = []
-        edge = []
-        name = []
+        x_up_bound   = []
+        edge         = []
+        name         = []
         con_up_edge  = []
         con_low_edge = []
         
@@ -490,16 +453,13 @@ class Trust_Region_Optimization(Data):
                 con_up_edge.append(edge[ii])
                 con_low_edge.append(edge[ii])
             
-        x_low_bound = np.array(x_low_bound)
-        x_up_bound = np.array(x_up_bound)
+        x_low_bound  = np.array(x_low_bound)
+        x_up_bound   = np.array(x_up_bound)
         con_up_edge  = np.array(con_up_edge)         
         con_low_edge = np.array(con_low_edge)        
-        #bnds = np.zeros((len(inp),2))
-        #for ii in xrange(0,len(inp)):
-            ## Scaled bounds
-            #bnds[ii] = (bnd[ii][0]/scl[ii]),(bnd[ii][1]/scl[ii])
         
         return (x,scaled_constraints,x_low_bound,x_up_bound,con_up_edge,con_low_edge,name)
+    
     
     def accuracy_ratio(self,f_center,f_hi,f_corr,g_viol_center,g_viol_hi,g_viol_corr,tr):
         
@@ -511,12 +471,13 @@ class Trust_Region_Optimization(Data):
         if ( np.abs(low_fidelity_center-low_fidelity_optimum) < self.trust_region_function_precision):
             rho = 1.
         else:
-            rho = (high_fidelity_center-high_fidelity_optimum)/(low_fidelity_center-low_fidelity_optimum)        
+            rho = (high_fidelity_center-high_fidelity_optimum)/(low_fidelity_center-low_fidelity_optimum) 
+            
         return rho
+    
     
     def update_tr_size(self,rho,tr,accepted):
         
-        print tr
         tr_size_previous = tr.size
         tr_action = 0 # 1: shrink, 2: no change, 3: expand
         if( not accepted ): # shrink trust region
