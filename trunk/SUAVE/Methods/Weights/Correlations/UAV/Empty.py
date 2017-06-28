@@ -14,6 +14,7 @@ from SUAVE.Core import (
     Data, Container,
     )
 
+
 def empty(vehicle):
     
     """
