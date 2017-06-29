@@ -51,11 +51,8 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
         problem.fidelity_level = level
         for ii,x in enumerate(x_samples):
             res = evaluate_model(problem,x,scaled_constraints)
-            f[level-1,ii]  = res[0]    # objective value
-            g[level-1,ii,:]  = res[1]    # constraints vector
-            
-    fOpt_min = 10000.
-    xOpt_min = x*1.
+            f[level-1,ii]    = res[0]  # objective value
+            g[level-1,ii,:]  = res[1]  # constraints vector
     
     converged = False
     
@@ -86,18 +83,15 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             problem.fidelity_level = 1
             outputs = opt(opt_prob, sens_type='FD',problem=problem, \
                           obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
-            fOpt = outputs[0]
+            fOpt = outputs[0][0]
             xOpt = outputs[1]
-            gOpt = np.zeros([1,len(con)])[0]
 
         elif opt_type == 'MEI':
             fstar = np.min(f[1,:])
             opt_prob = pyOpt.Optimization('SUAVE',evaluate_expected_improvement, \
                                       obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar)     
-
-            fOpt = np.inf
                 
-            initialize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con_up_edge,nam,con,x_eval)     
+            initialize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con_up_edge,nam,con,None)     
                
             opt = pyOpt.pyALPSO.ALPSO()    
             #opt.setOption('SwarmSize', value=40)
@@ -107,20 +101,18 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             #opt.setOption('etol',value=1.)
             
             problem.fidelity_level = 1
-            #expected_improvement_carpet(lbd, ubd, problem, f_additive_surrogate, g_additive_surrogate, fstar)            
+            
             outputs = opt(opt_prob,problem=problem, \
-                          obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar,cons=con)#, sens_step = sense_step)  
-            if outputs[0] < fOpt:
-                fOpt = outputs[0]
-                xOpt = outputs[1]
-                gOpt = np.zeros([1,len(con)])[0]       
-                      
+                          obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate,fstar=fstar,cons=con)#, sens_step = sense_step)
+            fOpt  = np.nan 
+            imOpt = outputs[0]
+            xOpt  = outputs[1]
         
         # ---------------------------------
         
         
         f = np.hstack((f,np.zeros((num_fidelity_levels,1))))
-        g = np.hstack((g,np.zeros((num_fidelity_levels,1,len(gOpt)))))
+        g = np.hstack((g,np.zeros((num_fidelity_levels,1,len(con)))))
         x_samples = np.vstack((x_samples,xOpt))
         for level in range(1,num_fidelity_levels+1):
             problem.fidelity_level = level
@@ -129,13 +121,13 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
             g[level-1][-1] = res[1]
             
         # History writing
-        f_out.write('Iteration: ' + str(kk+1) + '\n')
-        f_out.write('x0      : ' + str(xOpt[0]) + '\n')
-        f_out.write('x1      : ' + str(xOpt[1]) + '\n')
+        f_out.write('Iteration: ' + str(kk+1)    + '\n')
+        f_out.write('x0       : ' + str(xOpt[0]) + '\n')
+        f_out.write('x1       : ' + str(xOpt[1]) + '\n')
         if opt_type == 'basic':
-            f_out.write('expd hi : ' + str(fOpt[0]) + '\n')
+            f_out.write('expd hi  : ' + str(fOpt) + '\n')
         elif opt_type == 'MEI':
-            f_out.write('expd imp : ' + str(fOpt) + '\n')
+            f_out.write('expd imp : ' + str(imOpt) + '\n')
         f_out.write('low obj : ' + str(f[0][-1]) + '\n')
         f_out.write('hi  obj : ' + str(f[1][-1]) + '\n') 
         if kk == (max_iterations-1):
@@ -149,27 +141,22 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
                 min_ind = np.argmin(f[1])
                 x_eval = x_samples[min_ind]
             
-                initalize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con_up_edge,nam,con,x_eval)    
+                initialize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con_up_edge,nam,con,x_eval)    
             
-                opt = pyOpt.pySNOPT.SNOPT()      
-            
-                problem.fidelity_level = 1
-                outputs = opt(opt_prob, sens_type='FD',problem=problem, \
-                              obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
-                fOpt = outputs[0][0]
-                xOpt = outputs[1]
-                gOpt = np.zeros([1,len(con)])[0] 
+                fOpt, xOpt = run_objective_optimization(opt_prob,problem,f_additive_surrogate,g_additive_surrogate)
+        
                 f_out.write('x0_opt  : ' + str(xOpt[0]) + '\n')
                 f_out.write('x1_opt  : ' + str(xOpt[1]) + '\n')                
                 f_out.write('final opt : ' + str(fOpt) + '\n')
+                
             print 'Iteration Limit Reached'
             break        
             
-        fOpt = f[1][-1]
         
-        if np.isclose(fOpt_min,f[1][-1],rtol=tolerance,atol=1e-12)==1:
-            print 'Hard convergence reached'      
-            f_out.write('Hard convergence reached')
+        #if np.isclose(fOpt,f[1][-1],rtol=tolerance,atol=1e-12)==1:
+        if np.abs(fOpt-f[1][-1]) < tolerance:
+            print 'Convergence reached'      
+            f_out.write('Convergence reached')
             f_diff = f[1,:] - f[0,:]
             converged = True
             if opt_type == 'MEI':
@@ -188,25 +175,19 @@ def Additive_Solve(problem,num_fidelity_levels=2,num_samples=10,max_iterations=1
                               obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
                 fOpt = outputs[0][0]
                 xOpt = outputs[1]
-                gOpt = np.zeros([1,len(con)])[0] 
                 f_out.write('x0_opt  : ' + str(xOpt[0]) + '\n')
                 f_out.write('x1_opt  : ' + str(xOpt[1]) + '\n')                
                 f_out.write('final opt : ' + str(fOpt) + '\n')            
             break        
-            
-        if f[1][-1] < fOpt_min:
-            fOpt_min = f[1][-1]*1.
-            xOpt_min = xOpt*1.
-       
-            
-        pass
+        
+        fOpt = f[1][-1]*1.
     
     if converged == False:
-        #print 'Iteration Limit reached'
+        print 'Iteration Limit reached'
         f_out.write('Maximum iteration limit reached')
     
     np.save('x_samples.npy',x_samples)
-    np.save('all_data.npy',np.vstack([x_samples[:,0],x_samples[:,1],f_diff,f[0,:],f[1,:]]))
+    np.save('f_data.npy',f)
     f_out.close()
     print fOpt,xOpt
     if print_output == False:
@@ -245,6 +226,7 @@ def evaluate_corrected_model(x,problem=None,obj_surrogate=None,cons_surrogate=No
     return obj,const,fail
 
 def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surrogate=None,fstar=np.inf,cons=None):
+
     obj   = problem.objective(x)
     const = problem.all_constraints(x).tolist()
     fail  = np.array(np.isnan(obj.tolist()) or np.isnan(np.array(const).any())).astype(int)
@@ -278,19 +260,15 @@ def evaluate_expected_improvement(x,problem=None,obj_surrogate=None,cons_surroga
 
 def expected_improvement_carpet(lbs,ubs,problem,obj_surrogate,cons_surrogate,fstar):
 
-    # assumes 2d
+    # Assumes 2D
+    # To use before global opt:
+    # expected_improvement_carpet(x_low_bound, x_up_bound, problem, f_additive_surrogate, g_additive_surrogate, fstar)  
 
     problem.fidelity_level = 1
-    linspace_num = 20
+    linspace_num = 40
     
     x0s = np.linspace(lbs[0],ubs[0],linspace_num)
-    x1s = np.linspace(lbs[1],ubs[1],linspace_num)
-    
-    #for ii,sweep in enumerate(sweeps):
-        #for jj,twist in enumerate(twists):
-
-            #output = problem.objective([sweep,twist])
-            #summary = problem.summary    
+    x1s = np.linspace(lbs[1],ubs[1],linspace_num) 
         
     EI = np.zeros([linspace_num,linspace_num])        
         
@@ -314,22 +292,26 @@ def expected_improvement_carpet(lbs,ubs,problem,obj_surrogate,cons_surrogate,fst
             
     import matplotlib.pyplot as plt
             
+    num_levels = 20
+            
     plt.figure(1)
-    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2)
+    levals = np.linspace(np.min(EI),np.max(EI),num_levels)
+    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2,levels=levals)
     cbar = plt.colorbar(CS)
     cbar.ax.set_ylabel('Expected Improvement')
     
-    num_levels = 20
-    EI = np.log(EI)
-    print np.min(EI[EI!=-np.inf])
-    if np.min(EI[EI!=-np.inf]) > -100:
-        levals = np.linspace(np.min(EI[EI!=-np.inf]),np.max(EI),num_levels)
-    else:
-        levals = np.linspace(-40,np.max(EI),num_levels)    
-    plt.figure(2)
-    CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2,levels=levals)
-    cbar = plt.colorbar(CS)
-    cbar.ax.set_ylabel('Expected Improvement')    
+    # Below can be used if log expected improvement is desired
+    
+    #EI = np.log(EI)
+    #print np.min(EI[EI!=-np.inf])
+    #if np.min(EI[EI!=-np.inf]) > -100:
+        #levals = np.linspace(np.min(EI[EI!=-np.inf]),np.max(EI),num_levels)
+    #else:
+        #levals = np.linspace(-40,np.max(EI),num_levels)    
+    #plt.figure(2)
+    #CS = plt.contourf(x0s, x1s, EI, 20, linewidths=2,levels=levals)
+    #cbar = plt.colorbar(CS)
+    #cbar.ax.set_ylabel('Log Expected Improvement')    
     
     plt.show()
     
@@ -377,7 +359,10 @@ def initialize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con
         opt_prob.addObj('f',100) 
     for ii in xrange(0,len(inp)):
         vartype = 'c'
-        opt_prob.addVar(nam[ii],vartype,lower=x_low_bound[ii],upper=x_up_bound[ii],value=x_eval[ii])    
+        if x_eval == None:
+            opt_prob.addVar(nam[ii],vartype,lower=x_low_bound[ii],upper=x_up_bound[ii]) 
+        else:
+            opt_prob.addVar(nam[ii],vartype,lower=x_low_bound[ii],upper=x_up_bound[ii],value=x_eval[ii])    
     for ii in xrange(0,len(con)):
         if con[ii][1]=='<':
             opt_prob.addCon(nam[ii], type='i', upper=con_up_edge[ii])
@@ -386,4 +371,19 @@ def initialize_opt_vals(opt_prob,obj,inp,x_low_bound,x_up_bound,con_low_edge,con
         elif con[ii][1]=='=':
             opt_prob.addCon(nam[ii], type='e', equal=con_up_edge[ii])        
             
+    return
+
+def run_objective_optimization(opt_prob,problem,f_additive_surrogate,g_additive_surrogate,optimizer='SNOPT'):
+    
+    opt = pyOpt.pySNOPT.SNOPT()
+
+    problem.fidelity_level = 1
+    outputs = opt(opt_prob, sens_type='FD',problem=problem, \
+                  obj_surrogate=f_additive_surrogate,cons_surrogate=g_additive_surrogate)#, sens_step = sense_step)  
+    fOpt = outputs[0][0]
+    xOpt = outputs[1]
+    
+    return fOpt, xOpt
+
+def run_MEI_optimization():
     return
