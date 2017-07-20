@@ -29,18 +29,16 @@ from SUAVE.Methods.Aerodynamics.AVL.Data.Cases       import Run_Case
 import time
 import pylab as plt
 import os
-import numpy as np
-import sys
 import sklearn
 from sklearn import gaussian_process
-from sklearn import neighbors
-from sklearn import svm
+import numpy as np
+import sys
 from shutil import rmtree
 from warnings import warn
 
-## ----------------------------------------------------------------------
-##  Class
-## ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+#  Class
+# ----------------------------------------------------------------------
 
 class AVL_Inviscid(Aerodynamics):
     """ SUAVE.Analyses.Aerodynamics.AVL
@@ -71,13 +69,10 @@ class AVL_Inviscid(Aerodynamics):
         # Conditions table, used for surrogate model training
         self.training = Data()   
         
-        #HALE UAV Cruise
-        self.training.angle_of_attack  = np.array([0 , 2, 4, 6 ,8, 10]) * Units.deg
-        self.training.Mach             = np.array([0.075, 0.1, 0.125 ,0.15,0.175, 0.2])       
-    
         # Standard subsonic/transolic aircarft
-        #self.training.angle_of_attack  = np.array([-2.,3.,8.])
-        #self.training.Mach             = np.array([0.3,0.7,0.85]) 
+        self.training.angle_of_attack  = np.array([-2.,0, 2.,5., 7., 10])*Units.degree 
+        self.training.Mach             = np.array([0.05,0.15,0.25, 0.45,0.65,0.85])       
+        
         
         self.training.lift_coefficient = None
         self.training.drag_coefficient = None
@@ -85,7 +80,6 @@ class AVL_Inviscid(Aerodynamics):
         
         # Surrogate model
         self.surrogates = Data()
-        self.surrogates.moment_coefficient = None
 
     def initialize(self):
 
@@ -93,11 +87,7 @@ class AVL_Inviscid(Aerodynamics):
         self.tag      = 'avl_analysis_of_{}'.format(geometry.tag)
 
         run_folder = self.settings.filenames.run_folder
-        #if os.path.exists(run_folder):
-            #if self.keep_files:
-                #warn('deleting old avl run files',Warning)
-            #rmtree(run_folder)
-        #os.mkdir(run_folder)
+
         
         # Sample training data
         self.sample_training()
@@ -118,7 +108,6 @@ class AVL_Inviscid(Aerodynamics):
         AoA  = conditions.aerodynamics.angle_of_attack
         lift_model = surrogates.lift_coefficient
         drag_model = surrogates.drag_coefficient
-        moment_model = surrogates.moment_coefficient
         
         # Inviscid lift
         data_len = len(AoA)
@@ -149,7 +138,6 @@ class AVL_Inviscid(Aerodynamics):
         
         CL   = np.zeros([len(AoA)*len(mach),1])
         CD   = np.zeros([len(AoA)*len(mach),1])
-        CM   = np.zeros([len(AoA)*len(mach),1])
 
         
         if self.training_file is None:
@@ -166,12 +154,11 @@ class AVL_Inviscid(Aerodynamics):
                 # Set training conditions
 
                 run_conditions = Aerodynamics()
-                run_conditions.weights.total_mass           = geometry.mass_properties.max_takeoff
+                run_conditions.weights.total_mass           = 0 # Currently set to zero. Used for dynamic analysis which is under development
                 run_conditions.freestream.density           = 1.225
                 run_conditions.freestream.gravity           = 9.81          
                 run_conditions.aerodynamics.angle_of_attack = AoA
                 run_conditions.freestream.mach_number       = mach[j]
-                run_conditions.freestream.velocity          = mach[j] * 340.29 #speed of sound
                 
                 #Run Analysis at AoA[i] and mach[j]
                 results =  self.evaluate_conditions(run_conditions)
@@ -179,7 +166,6 @@ class AVL_Inviscid(Aerodynamics):
                 # Obtain CD and CL # Store other variables here as well 
                 CL[count*len(mach):(count+1)*len(mach),0] = results.aerodynamics.lift_coefficient[:,0]
                 CD[count*len(mach):(count+1)*len(mach),0] = results.aerodynamics.drag_breakdown.induced.total[:,0]
-                CM[count*len(mach):(count+1)*len(mach),0] = results.aerodynamics.pitch_moment_coefficient[:,0]
            
            
                 count += 1
@@ -192,13 +178,12 @@ class AVL_Inviscid(Aerodynamics):
             xy         = data_array[:,0:2]
             CL         = data_array[:,2:3]
             CD         = data_array[:,3:4]
-            CM         = data_array[:,4:5]
 
         # Save the data
-        np.savetxt(geometry.tag+'_data_aerodynamics.txt',np.hstack([xy,CL,CD,CM]),fmt='%10.8f',header='AoA Mach CL CD CM')
+        np.savetxt(geometry.tag+'_data_aerodynamics.txt',np.hstack([xy,CL,CD]),fmt='%10.8f',header='AoA Mach CL CD ')
 
         # Store training data
-        training.coefficients = np.hstack([CL,CD,CM])
+        training.coefficients = np.hstack([CL,CD])
         training.grid_points  = xy
         
 
@@ -212,48 +197,33 @@ class AVL_Inviscid(Aerodynamics):
         mach_data = training.Mach
         CL_data   = training.coefficients[:,0]
         CD_data   = training.coefficients[:,1]
-        CM_data   = training.coefficients[:,2]
         xy        = training.grid_points 
         
         # Gaussian Process New
-        regr_cm = gaussian_process.GaussianProcess()
         regr_cl = gaussian_process.GaussianProcess()
         regr_cd = gaussian_process.GaussianProcess()
         cl_surrogate = regr_cl.fit(xy, CL_data)
         cd_surrogate = regr_cd.fit(xy, CD_data)
-        cm_surrogate = regr_cm.fit(xy, CM_data) 
    
-
         self.surrogates.lift_coefficient = cl_surrogate
-        self.surrogates.drag_coefficient = cd_surrogate
-        self.surrogates.moment_coefficient = cm_surrogate
-        
+        self.surrogates.drag_coefficient = cd_surrogate  
 
-        # HALE UAV Cruise
-        AoA_points  = np.linspace(-1.,11.,100)*Units.deg 
-        mach_points = np.linspace(.05,.225,100)  
-    
-        # Standard subsonic/transolic aircarft
-        #AoA_points  = np.linspace(-1.,7.,100)*Units.deg  # Transonic Aircraft 
-        #mach_points = np.linspace(.25,.9,100)         
+        AoA_points  = np.linspace(-3.,11.,100)*Units.deg 
+        mach_points = np.linspace(.02,.9,100)         
             
         AoA_mesh,mach_mesh = np.meshgrid(AoA_points,mach_points)
         
         CL_sur = np.zeros(np.shape(AoA_mesh))
         CD_sur = np.zeros(np.shape(AoA_mesh))
-        CM_sur = np.zeros(np.shape(AoA_mesh))
         
         
         for jj in range(len(AoA_points)):
             for ii in range(len(mach_points)):
                 CL_sur[ii,jj] = cl_surrogate.predict(np.array([AoA_mesh[ii,jj],mach_mesh[ii,jj]]))
                 CD_sur[ii,jj] = cd_surrogate.predict(np.array([AoA_mesh[ii,jj],mach_mesh[ii,jj]]))
-                CM_sur[ii,jj] = cm_surrogate.predict(np.array([AoA_mesh[ii,jj],mach_mesh[ii,jj]]))
         
-
         fig = plt.figure('Coefficient of Lift Surrogate Plot')    
         plt_handle = plt.contourf(AoA_mesh/Units.deg,mach_mesh,CL_sur,levels=None)
-        #plt.clabel(plt_handle, inline=1, fontsize=10)
         cbar = plt.colorbar()
         plt.scatter(xy[:,0]/Units.deg,xy[:,1])
         plt.xlabel('Angle of Attack (deg)')
@@ -290,8 +260,7 @@ class AVL_Inviscid(Aerodynamics):
         output_template = self.settings.filenames.output_template
         batch_template  = self.settings.filenames.batch_template
         deck_template   = self.settings.filenames.deck_template
-        #stability_output_template = self.settings.filenames.stability_output_template # SUAVE-AVL dynamic stability under development 
-        
+ 
         # update current status
         self.current_status.batch_index += 1
         batch_index                      = self.current_status.batch_index
@@ -304,11 +273,8 @@ class AVL_Inviscid(Aerodynamics):
         
         # case filenames
         for case in cases:
-            case.result_filename = output_template.format(case.tag)
-        
-        #case.eigen_result_filename = stability_output_template.format(batch_index) # SUAVE-AVL dynamic stability under development 
-
-            
+            cases[case].result_filename = output_template.format(case)
+          
     
         # write the input files
         with redirect.folder(run_folder,force=False):
