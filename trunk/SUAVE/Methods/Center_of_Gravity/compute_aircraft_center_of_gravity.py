@@ -58,12 +58,7 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction=.06):
         # ---------------------------------------------------------------------------------
         # configurations with fuselages (BWB, Tube and Wing)  
         # ---------------------------------------------------------------------------------
-        if vehicle.fuselages.keys() != []:           
-                
-                # Control Sytems
-                control_systems    = vehicle.control_systems                
-                control_systems_cg        = control_systems.mass_properties.center_of_gravity
-                control_systems_moment    = (control_systems.origin+control_systems_cg )*control_systems.mass_properties.mass
+        if vehicle.fuselages.keys() != []: 
                 
                 landing_gear       = vehicle.landing_gear
                 propulsor_name     = vehicle.propulsors.keys()[0]
@@ -76,13 +71,18 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction=.06):
                 fuel               = vehicle.fuel
                 apu                = vehicle.apu
                 hydraulics         = vehicle.hydraulics
-                optionals          = vehicle.optionals    
+                optionals          = vehicle.optionals     
+                control_systems           = vehicle.control_systems 
                 
-                # fuel
+                # Control Sytems               
+                control_systems_cg        = control_systems.mass_properties.center_of_gravity
+                control_systems_moment    = (control_systems.origin+control_systems_cg )*control_systems.mass_properties.mass                
+                
+                # Fuel
                 fuel_cg                   = fuel.mass_properties.center_of_gravity
                 fuel_moment               = (fuel.origin+fuel_cg)*fuel.mass_properties.mass                
-                fuse_key           = vehicle.fuselages.keys()[0] #['fuselage']
-                fuselage           = vehicle.fuselages[fuse_key]                  
+                fuse_key                  = vehicle.fuselages.keys()[0] #['fuselage']
+                fuselage                  = vehicle.fuselages[fuse_key]                   
                  
                 # Fuselage
                 fuselage_cg               = fuselage.mass_properties.center_of_gravity
