@@ -328,6 +328,7 @@ def write(vehicle,tag):
         vsp.SetGeomName(fuse_id, fuselage.tag)
         area_tags[fuselage.tag] = ['fuselages',fuselage.tag]
     
+        tail_z_pos = 0.02 # default value
         if fuselage.has_key('OpenVSP_values'):
             
 
@@ -357,7 +358,7 @@ def write(vehicle,tag):
             if vals.tail.has_key('z_pos'):
                 tail_z_pos = vals.tail.z_pos
             else:
-                tail_z_pos = 0.02
+                pass # use above default
                 
             vsp.SetParmVal(fuse_id,"AllSym","XSec_4",1)
     
