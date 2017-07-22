@@ -2,7 +2,7 @@
 # 
 # Created:  Dec 2013, SUAVE Team
 # Modified: Nov 2016, T. MacDonald
-#        
+#         : Jul 2017, M. Vegh
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -70,7 +70,7 @@ def compressibility_drag_wing(state,settings,geometry):
     # get effective Cl and sweep
     tc = t_c_w /(cos_sweep)
     cl = cl_w / (cos_sweep*cos_sweep)
-
+    '''
     # compressibility drag based on regressed fits from AA241
     mcc_cos_ws = 0.922321524499352       \
                - 1.153885166170620*tc    \
@@ -93,6 +93,38 @@ def compressibility_drag_wing(state,settings,geometry):
     
     # compressibility drag
     cd_c = dcdc_cos3g * cos_sweep*cos_sweep*cos_sweep
+    '''
+    ##modified implementation -------------------------------------------------------
+    
+    supercrit = 1.0  
+    mcc = (0.95399999999999996 - 0.23499999999999999*cl)+0.025899999999999999*cl*cl
+    mcc = mcc - ((1.9630000000000001 - 1.0780000000000001 * cl) + 0.34999999999999998 * cl * cl) * tc
+    mcc = mcc + ((2.9689999999999999 - 2.738 * cl) + 1.4690000000000001 * cl * cl) * tc * tc
+    mcc = mcc + supercrit * 0.059999999999999998
+    mcc = mcc / np.cos(sweep_w)
+    rm = mach / mcc
+    dm = rm - 1.0
+    
+    cd_c = np.ones_like(mach)#copy.deepcopy(mach)
+    
+    for irm in range(0,len(rm)): 
+      if((rm[irm] >= 0.5) and (rm[irm] < 0.80000000000000004)):
+          cd_c[irm] = 0.00013888951999999999 + 0.00055555999999999997 * dm[irm] + 0.00055556192 * dm[irm] * dm[irm]
+      elif((rm[irm] >= 0.80000000000000004) and (rm[irm] < 0.94999999999999996)):
+          cd_c[irm] = 0.00070899999999999999 + 0.0067330000000000003 * dm[irm] + 0.019560000000000001 * dm[irm] * dm[irm] + 0.011849999999999999 * dm[irm] * dm[irm] * dm[irm]
+
+      elif((rm[irm] >= 0.94999999999999996) and (rm[irm] < 1.0)):
+          cd_c[irm] = 0.001 + 0.027269999999999999 * dm[irm] + 0.49199999999999999 * dm[irm] * dm[irm] + 3.5738500000000002 * dm[irm] * dm[irm] * dm[irm]
+      elif(rm[irm] >= 1.0):
+          cd_c[irm] = ((0.001 + 0.027269999999999999 * dm[irm]) - 0.19520000000000001 * dm[irm] * dm[irm]) + 19.09 * dm[irm] * dm[irm] * dm[irm]   
+          
+      else:
+          cd_c[irm] = 0.0
+    
+    cd_c  = cd_c * np.cos(sweep_w)**3.0  #now take sweep into accound
+    mdiv  = mcc * (1.02 + (1.0 - np.cos(sweep_w)) * 0.080000000000000002)
+    MDiv  = mdiv    
+
     
     # increment
     #total_compressibility_drag += cd_c
