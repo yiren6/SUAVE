@@ -2,7 +2,8 @@
 #
 # Created:  Apr 2014, T. Momose
 # Modified: Nov 2015, M. Vegh
-#           May 2017, E. Botero
+#           Jan 2016, E. Botero
+#           Jul 2017, M. Clarke
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -113,7 +114,8 @@ def taw_cmalpha(geometry,mach,conditions,configuration):
         w_f   = geometry.fuselages['fuselage'].width
         l_f   = geometry.fuselages['fuselage'].lengths.total
         x_rqc = geometry.wings['main_wing'].origin[0] + 0.5*w_f*np.tan(sweep) + 0.25*c_root*(1 - (w_f/span)*(1-taper))    
-           
+        
+            
         p  = x_rqc/l_f
         Kf = 1.5012*p**2. + 0.538*p + 0.0331
         CmAlpha_body = Kf*w_f*w_f*l_f/Sref/mac   #NEGLECTS TAIL EFFECT ON CL_ALPHA

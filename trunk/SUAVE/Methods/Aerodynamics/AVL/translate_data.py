@@ -2,7 +2,7 @@
 # 
 # Created:  Mar 2015, T. Momose
 # Modified: Jan 2016, E. Botero
-# Modified: Apr 2017, M. Clarke
+#           Apr 2017, M. Clarke
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -26,14 +26,13 @@ def translate_conditions_to_cases(avl,conditions):
         case.tag  = avl.settings.filenames.case_template.format(avl.current_status.batch_index,i+1)
         case.mass = conditions.weights.total_mass
         case.conditions.freestream.mach     = conditions.freestream.mach_number
-        case.conditions.freestream.velocity = conditions.freestream.velocity
         case.conditions.freestream.density  = conditions.freestream.density
         case.conditions.freestream.gravitational_acceleration = conditions.freestream.gravity
         case.conditions.aerodynamics.angle_of_attack = conditions.aerodynamics.angle_of_attack[i]/Units.deg
-        case.conditions.aerodynamics.side_slip_angle = 0 #conditions.aerodynamics.side_slip_angle[i][0]
-        case.stability_and_control.control_deflections = np.array([[]]) # TODO How to do this from the SUAVE side?
+        case.conditions.aerodynamics.side_slip_angle = 0 
+        case.stability_and_control.control_deflections = np.array([[]]) 
         cases.append_case(case)
-        
+    
     return cases
 
 def translate_results_to_conditions(cases,results):
@@ -146,7 +145,7 @@ def translate_results_to_conditions(cases,results):
         res.aerodynamics.cm_alpha[i][0] = case_res.stability.alpha_derivatives.pitch_moment_derivative
         res.aerodynamics.cn_alpha[i][0] = case_res.stability.alpha_derivatives.yaw_moment_derivative
         res.aerodynamics.cz_beta[i][0] = -case_res.stability.beta_derivatives.lift_coefficient_derivative
-        res.aerodynamics.cl_beta[i][0] = case_res.stability.beta_derivatives.side_force_derivative
+        res.aerodynamics.cy_beta[i][0] = case_res.stability.beta_derivatives.side_force_derivative
         res.aerodynamics.cl_beta[i][0] = case_res.stability.beta_derivatives.roll_moment_derivative
         res.aerodynamics.cm_beta[i][0] = case_res.stability.beta_derivatives.pitch_moment_derivative
         res.aerodynamics.cn_beta[i][0] = case_res.stability.beta_derivatives.yaw_moment_derivative
