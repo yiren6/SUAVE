@@ -89,7 +89,7 @@ def compressibility_drag_total(state,settings,geometry):
 
         # Calculate compressibility drag at Mach 0.99 and 1.05 for interpolation between
         (drag99,a,b) = drag_div(np.array([[0.99]] * len(Mc)),wing,k,cl,Sref_main)
-        (drag105,a,b,c,d) = wave_drag(conditions, 
+        (drag105,a,b,cd_c_l_105,cd_c_v_105) = wave_drag(conditions, 
                                   configuration, 
                                   main_fuselage, 
                                   propulsor, 
@@ -110,6 +110,11 @@ def compressibility_drag_total(state,settings,geometry):
                                                 propulsor, 
                                                 wing, 
                                                 num_engines,k,Sref_main,False)
+        
+        # assume compressibility drag at .99 is due to volume wave drag
+        c_inds = np.logical_and((Mc > 0.99),(Mc < 1.05))     
+        cd_c_l[c_inds] = 0. + (cd_c_l_105[c_inds])*(Mc[c_inds]-0.99)/(1.05-0.99)
+        cd_c_v[c_inds] = drag99[c_inds] + (cd_c_v_105[c_inds]-drag99[c_inds])*(Mc[c_inds]-0.99)/(1.05-0.99)
 
         # Incorporate supersonic results into total compressibility drag coefficient
         (cd_c[Mc >= 1.05],mcc[Mc >= 1.05], MDiv[Mc >= 1.05]) = (cd_c_sup[Mc >= 1.05],mcc_sup[Mc >= 1.05],MDiv_sup[Mc >= 1.05])
@@ -131,12 +136,16 @@ def compressibility_drag_total(state,settings,geometry):
 
     # Fuselage wave drag
     if len(main_fuselage) > 0:
-        fuse_drag[mach >= 1.05] = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,Sref_main)
+        fuse_wave = wave_drag_body_of_rev(main_fuselage.lengths.total,main_fuselage.effective_diameter/2.0,Sref_main)
+        fuse_drag[mach >= .99]  = fuse_wave*(mach[mach>=.99]-.99)/1.05
+        fuse_drag[mach >= 1.05] = fuse_wave
     else:
         raise ValueError('Main fuselage does not have a total length')
 
     # Propulsor wave drag	
-    prop_drag[mach >= 1.05] = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,Sref_main)*propulsor.number_of_engines
+    prop_wave               = wave_drag_body_of_rev(propulsor.engine_length,propulsor.nacelle_diameter/2.0,Sref_main)*propulsor.number_of_engines
+    prop_drag[mach >= .99]  = prop_wave*(mach[mach>=.99]-.99)/1.05
+    prop_drag[mach >= 1.05] = prop_wave    
     
     drag_breakdown.compressible[main_fuselage.tag] = fuse_drag
     drag_breakdown.compressible[propulsor.tag] = prop_drag
