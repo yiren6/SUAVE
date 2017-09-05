@@ -66,6 +66,7 @@ def compressibility_drag_wing(state,settings,geometry):
     mach           = conditions.freestream.mach_number
     velocity       = conditions.freestream.velocity
     mu             = conditions.freestream.dynamic_viscosity
+    rho            = conditions.freestream.density
     drag_breakdown = conditions.aerodynamics.drag_breakdown
     
     root_c = wing.chords.root
@@ -76,21 +77,23 @@ def compressibility_drag_wing(state,settings,geometry):
     cd_c = np.zeros_like(mach)
     
     if wing.Segments:
+        if wing.Segments[0].percent_span_location != 0 or wing.Segments[-1].percent_span_location != 1.:
+            raise ValueError('Full wing must be defined.')
+        
         for ii in range(len(wing.Segments)-1):
-            tc           = wing.Segments[ii].thickness_to_chord
+            seg_tc       = wing.Segments[ii].thickness_to_chord
             seg_rc       = wing.Segments[ii].root_chord_percent*root_c
             seg_tc       = wing.Segments[ii+1].root_chord_percent*root_c
             seg_span_per = wing.Segments[ii+1].percent_span_location - \
                            wing.Segments[ii].percent_span_location
             seg_span     = seg_span_per*span
             
-            cd_c += get_segment_CD(mach, velocity, mu, tc, seg_rc, seg_tc, seg_span, area, 
+            cd_c += get_segment_CD(mach, velocity, mu, rho, seg_tc, seg_rc, seg_tc, seg_span, area, 
                                    airfoil_drag_surrogate, surrogate_scale, division_number)
-                       
     else:
         tc     = wing.thickness_to_chord 
         
-        cd_c = get_segment_CD(mach, velocity, mu, tc, root_c, tip_c, span, area, 
+        cd_c = get_segment_CD(mach, velocity, mu, rho, tc, root_c, tip_c, span, area, 
                               airfoil_drag_surrogate, surrogate_scale, division_number)
     
     # need to add integration step
@@ -100,7 +103,6 @@ def compressibility_drag_wing(state,settings,geometry):
     # dump data to conditions
     wing_results = Data(
         compressibility_drag      = cd_c    ,
-        thickness_to_chord        = tc      , 
     )
     drag_breakdown.compressible[wing.tag] = wing_results
     
@@ -111,7 +113,7 @@ def section_cl(span,area,chord,y_pos):
     cl = 4*area/(np.pi*span*chord)*np.sqrt(1.-(2.*y_pos/span)*(2.*y_pos/span))
     return cl
 
-def get_segment_CD(mach,velocity,mu,tc,root_c,tip_c,span,area,airfoil_drag_surrogate,\
+def get_segment_CD(mach,velocity,mu,rho,tc,root_c,tip_c,span,area,airfoil_drag_surrogate,\
                    surrogate_scale,division_number):
     
     non_dim_secs = np.linspace(0,1,division_number)
@@ -119,7 +121,7 @@ def get_segment_CD(mach,velocity,mu,tc,root_c,tip_c,span,area,airfoil_drag_surro
     
     chord = root_c - non_dim_secs*(root_c-tip_c)
     cl = section_cl(span, area, chord, dim_secs)
-    re = chord*velocity/mu
+    re = chord*rho*velocity/mu
     
     sur_mach = np.repeat(mach,len(non_dim_secs))
     sur_re   = re.reshape([len(sur_mach)]) 
