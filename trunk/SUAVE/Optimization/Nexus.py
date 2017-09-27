@@ -164,7 +164,7 @@ class Nexus(Data):
 
     def finite_difference(self,x = None, f= None, g = None): #f and g not used; just used to allow common interface for pyOpt
         inputs = self.optimization_problem.inputs
-        if x == None:
+        if x.any() == None:
             x = inputs[:,1] / inputs[:,3] #unscale input values
             
         fd_step = self.finite_difference_step
@@ -229,8 +229,7 @@ class Nexus(Data):
      
      
         fail                 = 0
-        print 'grad_obj = ', grad_obj
-        print 'jac_con = ', jac_con
+
         grad_obj = grad_obj.tolist()
         jac_con  = jac_con.tolist()
         return grad_obj, jac_con, fail
