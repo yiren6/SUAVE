@@ -34,6 +34,10 @@ class Sizing_Loop(Data):
         self.maximum_iterations    = None  #cutoff point for sizing loop to close
         self.output_filename       = None
         self.sizing_evaluation     = None  #defined in the Procedure script
+        self.max_y                 = None
+        self.min_y                 = None
+        self.hard_max_bound        = False
+        self.hard_min_bound        = True
         self.write_threshhold      = 9     #number of iterations before it writes, regardless of how close it is to currently written values
         self.max_error             = 0.    #maximum error
         
@@ -43,6 +47,8 @@ class Sizing_Loop(Data):
         self.iteration_options.max_newton_raphson_tolerance      = 2E-3             #threshhold at which newton raphson is no longer used (to prevent overshoot and extra iterations)
         self.iteration_options.h                                 = 1E-6             #finite difference step for Newton iteration
         self.iteration_options.initialize_jacobian               = 'newton-raphson' #how Jacobian is initialized for broyden; newton-raphson by default
+        self.iteration_options.jacobian                          = np.array([np.nan])
+        self.iteration_options.write_jacobian                    = True
         self.iteration_options.max_initial_step                  = 1.               #maximum distance at which interpolation is allowed
         self.iteration_options.min_fix_point_iterations          = 2                #minimum number of iterations to perform fixed-point iteration before starting newton-raphson
         self.iteration_options.min_surrogate_step                = .011             #minimum distance at which SVR is used (if closer, table lookup is used)
@@ -97,7 +103,7 @@ class Sizing_Loop(Data):
                 diff = np.subtract(scaled_inputs, data_inputs) #check how close inputs are to tabulated values  
                 #find minimum entry and corresponding index 
                 imin_dist = -1 
-                for k in range(len(diff[:,-1])):
+                for k in xrange(len(diff[:,-1])):
                     row = diff[k,:]
                     row_norm = np.linalg.norm(row)
                     if row_norm < min_norm:
@@ -107,17 +113,7 @@ class Sizing_Loop(Data):
                 if min_norm<iteration_options.max_initial_step: #make sure data is close to current guess
                     if self.initial_step == 'Table' or min_norm<iteration_options.min_surrogate_step or len(data_outputs[:,0])< iteration_options.min_surrogate_length:
                         regr    = neighbors.KNeighborsRegressor( n_neighbors = 1)
-                        '''
-                        '''
-                        #interp = interpolate.griddata(data_inputs, data_outputs, scaled_inputs, method = 'nearest') 
-                        #y      = interp[0]  #different data type here
-                        '''
-                        y = []
-                        for j in range(len(data_outputs[0,:])):
-                            y_surrogate = regr.fit(data_inputs, data_outputs[:,j])
-                            y.append(y_surrogate.predict(scaled_inputs)[0])
-                        y = np.array(y)
-                        '''
+        
                     else:
                         print 'running surrogate method'
                         if self.initial_step == 'SVR':
@@ -171,11 +167,22 @@ class Sizing_Loop(Data):
                     
                         iteration_options.number_of_surrogate_calls += 1
                     y = []    
-                    for j in range(len(data_outputs[0,:])):
+                    for j in xrange(len(data_outputs[0,:])):
                         y_surrogate = regr.fit(data_inputs, data_outputs[:,j])
                         y.append(y_surrogate.predict(scaled_inputs)[0])    
+                        #check if it goes outside bounds for sizing variables: use table in this case
+                        #y_check, bound_violated = self.check_bounds(y)
+                        
+                        if y[j] > self.max_y[j] or y[j]< self.min_y[j]:
+                            print 'sizing variable range violated, val = ', y[j], ' j = ', j
+                            n_neighbors = min(iteration_options.n_neighbors, len(data_outputs))
+                            regr_backup = neighbors.KNeighborsRegressor( n_neighbors = n_neighbors)
+                            y_surrogate = regr_backup.fit(data_inputs, data_outputs[:,j])
+                            y[j]        = y_surrogate.predict(scaled_inputs)[0]
+                        
                     y = np.array(y)
                     
+
         # initialize previous sizing values
         y_save   = 2*y  #save values to detect oscillation
         y_save2  = 3*y
@@ -189,7 +196,13 @@ class Sizing_Loop(Data):
         while np.max(np.abs(err))>tol:        
             if self.update_method == 'successive_substitution':
                 err,y, i   = self.successive_substitution_update(y,err, sizing_evaluation, nexus, scaling, i, iteration_options)
-                
+               
+            elif self.update_method == 'damped_successive_substitution':
+                if i == 0:
+                    err,y, i   = self.successive_substitution_update(y,err, sizing_evaluation, nexus, scaling, i, iteration_options)
+                else:
+                    err,y, i   = self.successive_substitution_update((y+y_save)/2.,err, sizing_evaluation, nexus, scaling, i, iteration_options)
+                    
             elif self.update_method == 'newton-raphson' or self.update_method =='damped_newton':
                 if i==0:
                     nr_start=0  
@@ -239,14 +252,41 @@ class Sizing_Loop(Data):
                     else:
                         err,y, i   = self.broyden_update(y, err, sizing_evaluation, nexus, scaling, i, iteration_options)
                       
-                            
-                    
+            y  = self.stay_inbounds(y_save, y)           
             dy  = y-y_save
             dy2 = y-y_save2
             norm_dy  = np.linalg.norm(dy)
             norm_dy2 = np.linalg.norm(dy2)
+
+            
             print 'norm(dy) = ', norm_dy
             print 'norm(dy2) = ', norm_dy2
+            #handle stuck oscillatory behavior
+            
+            i_back = 0
+           
+            
+            while np.linalg.norm(err)>1.*np.linalg.norm(iteration_options.err_save) and i_back<5: #while?
+                print 'backtracking'
+                print 'err, err_save = ', np.linalg.norm(err), np.linalg.norm(iteration_options.err_save)
+                p = y-y_save
+                backtrack_y = y_save+p
+                print 'y, y_save, backtrack_y = ', y, y_save, backtrack_y
+                err,y, i     = self.successive_substitution_update(backtrack_y, err, sizing_evaluation, nexus, scaling, i, iteration_options)
+                print 'err backtrack = ', np.linalg.norm(err)
+                i_back+=1
+            
+            
+            #ensure it's within bounds
+            #y, bound_violated = self.check_bounds(y)
+            
+            #ensure it's within bounds (i.e. mass doesn't go negative)
+           
+            '''
+            if  norm_dy>10*norm_dy2:#norm_dy2<5.*self.tolerance**.5 and norm_dy>10*norm_dy2:
+                print 'oscillating, trying damped ss update'
+                err,y, i   = self.successive_substitution_update((y+y_save)/2.,err, sizing_evaluation, nexus, scaling, i, iteration_options)
+            '''
     
         
             
@@ -259,9 +299,19 @@ class Sizing_Loop(Data):
             print 'err = ', err
             
             #uncomment this when you want to write error at each iteration
-            file=open('y_err_values.txt', 'ab')
+            file=open('y_err_values.txt', 'ab')   
+            file.write('global iteration = ')
+            file.write(str( nexus.total_number_of_iterations))
+            
+            
+            file.write(', iteration = ')
             file.write(str(i))
+            file.write(', x = ')
+            file.write(str(scaled_inputs))
+            file.write(', y = ')
             file.write(', ')
+            file.write(str(y))
+            file.write(', err = ')
             file.write(str(err.tolist()))
             file.write('\n') 
             file.close()
@@ -304,7 +354,10 @@ class Sizing_Loop(Data):
     def successive_substitution_update(self,y, err, sizing_evaluation, nexus, scaling, iter, iteration_options):
         err_out, y_out = sizing_evaluation(y, nexus, scaling)
         iter += 1
+        
+        
         iteration_options.err_save = err
+        y_out, bound_violated = self.check_bounds(y_out)
         return err_out, y_out, iter
     
     def newton_raphson_update(self,y, err, sizing_evaluation, nexus, scaling, iter, iteration_options):
@@ -317,22 +370,57 @@ class Sizing_Loop(Data):
             p = -np.dot(Jinv,err)
             y_update = y + p
       
-            
-            '''
-            for i in range(len(y_update)):  #handle variable bounds
-                if y_update[i]<self.min_y[i]:
-                    y_update[i] = self.min_y[i]*1.
-                elif y_update[i]>self.max_y[i]:
-                    y_update[i] = self.max_y[i]*1.
-            '''
+     
+     
+            y_update = self.stay_inbounds(y, y_update)
             err_out, y_out = sizing_evaluation(y_update, nexus, scaling)
-            iter += 1 
+            iter += 1
+            #err_out, y_update, iter = self.stay_inbounds(y, y_update, iter, nexus)
+            print 'p before = ', p
+            p = y_update-y #back this out in case of bounds
+            print 'p after = ', p
+            
+            if np.linalg.norm(err_out)>np.linalg.norm(err):
+                print 'backtracking'
+                y_update = y+p/2.
+                err_out, y_out = sizing_evaluation(y_update, nexus, scaling)  
+                iter += 1 
+            
             
             #save these values in case of Broyden update
-            iteration_options.Jinv     = Jinv 
+            iteration_options.Jinv     = Jinv
+            iteration_options.jacobian = J
             iteration_options.y_save   = y
             iteration_options.err_save = err
+            
+            #write results for Jacobian at every iteration
+            unscaled_inputs = nexus.optimization_problem.inputs[:,1] #use optimization problem inputs here
+            input_scaling   = nexus.optimization_problem.inputs[:,3]
+            scaled_inputs   = unscaled_inputs/input_scaling
+
+            file=open('Jacobian_values.txt', 'ab')   
+            file.write('global iteration = ')
+            file.write(str( nexus.total_number_of_iterations))
+            
+            
+            file.write(', iteration = ')
+            file.write(str(iter))
+            file.write(', x = ')
+            file.write(str(scaled_inputs))
+            file.write(', err = ')
+            file.write(str(err_out))
+            file.write(', eigenvalues = ')
+            file.write(str(np.linalg.eig(J)[0]))
+            file.write(', condition number = ')
+            file.write(str(np.linalg.cond(J )))
+            #file.write(', Jacobian = ')
+            #file.write(str(J))
            
+            file.write('\n') 
+            file.close()
+            
+            
+            
             print 'err_out=', err_out
             
         except np.linalg.LinAlgError:
@@ -357,8 +445,11 @@ class Sizing_Loop(Data):
         y_update               = y + p
         
         err_out, y_out         = sizing_evaluation(y_update, nexus, scaling)
+        
+        
         #pack outputs
         iteration_options.Jinv     = Jinv_out
+        iteration_options.jacobian = np.linalg.inv(Jinv)
         iteration_options.err_save = err  #save previous iteration
         iteration_options.y_save   = y
         iter                       = iter+1
@@ -377,13 +468,7 @@ class Sizing_Loop(Data):
             y_update = y + p
             
             
-            '''
-            for i in range(len(y_update)):  #handle variable bounds
-                if y_update[i]<self.min_y[i]:
-                    y_update[i] = self.min_y[i]*1.
-                elif y_update[i]>self.max_y[i]:
-                    y_update[i] = self.max_y[i]*1.
-            '''
+
             err_out, y_out = sizing_evaluation(y_update, nexus, scaling)
             iter += 1 
             norm_error =np.linalg.norm(err_out)
@@ -406,7 +491,41 @@ class Sizing_Loop(Data):
         
         
         return err_out, y_update, iter
+       
+    def check_bounds(self, y):
+        bound_violated = 0
+        for j in xrange(len(y)):  #handle variable bounds to prevent going to weird areas (such as negative mass)
+            if self.hard_min_bound:
+                if y[j]<self.min_y[j]:
+                    y[j] = self.min_y[j]*1.
+                    bound_violated = 1
+            if self.hard_max_bound:
+                if y[j]>self.max_y[j]:
+                    y[j] = self.max_y[j]*1.
+                    bound_violated = 1
+        return y, bound_violated
+    
+    def stay_inbounds(self, y, y_update):
         
+        sizing_evaluation     = self.sizing_evaluation
+        scaling               = self.default_scaling
+        p                     = y_update-y #search step
+        y_out, bound_violated = self.check_bounds(y_update)
+        backtrack_step        = .5
+        bounds_violated       = 1 #counter to determine how many bounds are violated
+        while bound_violated:
+            print 'bound violated, backtracking'
+            for j in xrange(len(y_out)):
+                if not np.isclose(y_out[j], y_update[j]):
+                    y_update = y+p*backtrack_step
+                    bounds_violated = bounds_violated+1
+                    backtrack_step = backtrack_step*.5
+                    y_out, bound_violated = self.check_bounds(y_update)
+                   
+                    break
+            
+
+        return y_update
 
     __call__ = evaluate
     
@@ -419,7 +538,7 @@ def Finite_Difference_Gradient(x,f , my_function, inputs, scaling, iter, h):
     #use forward difference
 
     J=np.nan*np.ones([len(x), len(x)])
-    for i in range(len(x)):
+    for i in xrange(len(x)):
         xu=1.*x;
         xu[i]=x[i]+h *x[i]  #use FD step of H*x
         fu, y_out = my_function(xu, inputs,scaling)
@@ -430,12 +549,9 @@ def Finite_Difference_Gradient(x,f , my_function, inputs, scaling, iter, h):
         
 
 
-
     return J, iter
 
 
-
-        
         
         
     
