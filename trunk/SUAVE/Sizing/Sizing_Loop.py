@@ -38,11 +38,12 @@ class Sizing_Loop(Data):
         self.min_y                 = None
         self.hard_max_bound        = False
         self.hard_min_bound        = True
-        self.write_threshhold      = 9     #number of iterations before it writes, regardless of how close it is to currently written values
+        self.backtracking          = True
+        self.write_threshhold      = 3     #number of iterations before it writes, regardless of how close it is to currently written values
         self.max_error             = 0.    #maximum error
-        
+       
         #parameters that may only apply to certain methods
-        self.iteration_options     = Data()
+        self.iteration_options                                   = Data()
         self.iteration_options.newton_raphson_tolerance          = 5E-2             #threshhold of convergence when you start using newton raphson
         self.iteration_options.max_newton_raphson_tolerance      = 2E-3             #threshhold at which newton raphson is no longer used (to prevent overshoot and extra iterations)
         self.iteration_options.h                                 = 1E-6             #finite difference step for Newton iteration
@@ -55,9 +56,19 @@ class Sizing_Loop(Data):
         self.iteration_options.min_write_step                    = .011             #minimum distance at which sizing data are written
         self.iteration_options.min_surrogate_length              = 4                #minimum number data points needed before SVR is used
         self.iteration_options.number_of_surrogate_calls         = 0
-        #self.iteration_options.minimum_training_samples         = 1E6
+        
+        self.iteration_options.minimum_training_samples         = 1E6
         self.iteration_options.newton_raphson_damping_threshhold = 5E-5
         
+        
+        backtracking                         = Data()
+        backtracking.backtracking_flag       = True     #True means you do backtracking when err isn't decreased
+        backtracking.threshhold              = 1.2      # factor times the msq at which to terminate backtracking
+        backtracking.max_steps               = 5
+        backtracking.multipler               = .5
+        
+        #assign
+        self.iteration_options.backtracking  = backtracking
 
     def evaluate(self, nexus):
         
@@ -262,31 +273,40 @@ class Sizing_Loop(Data):
             print 'norm(dy) = ', norm_dy
             print 'norm(dy2) = ', norm_dy2
             #handle stuck oscillatory behavior
-            
-            i_back = 0
-           
-            
-            while np.linalg.norm(err)>1.*np.linalg.norm(iteration_options.err_save) and i_back<5: #while?
-                print 'backtracking'
-                print 'err, err_save = ', np.linalg.norm(err), np.linalg.norm(iteration_options.err_save)
-                p = y-y_save
-                backtrack_y = y_save+p
-                print 'y, y_save, backtrack_y = ', y, y_save, backtrack_y
-                err,y, i     = self.successive_substitution_update(backtrack_y, err, sizing_evaluation, nexus, scaling, i, iteration_options)
-                print 'err backtrack = ', np.linalg.norm(err)
-                i_back+=1
-            
-            
+            if self.iteration_options.backtracking.backtracking_flag == True:
+                backtracking       = iteration_options.backtracking
+                back_thresh        = backtracking.threshhold
+                i_back             = 0
+                min_err_back       = 1000.
+                y_back_list        = [y]
+                err_back_list      = [err]
+                norm_err_back_list = [np.linalg.norm(err)]
+                while np.linalg.norm(err)>back_thresh*np.linalg.norm(iteration_options.err_save) and i_back<backtracking.max_steps  : #while?
+                    print 'backtracking'
+                    print 'err, err_save = ', np.linalg.norm(err), np.linalg.norm(iteration_options.err_save)
+                    p = y-y_save
+                    backtrack_y = y_save+p*backtracking.multipler
+                    
+                    
+                    print 'y, y_save, backtrack_y = ', y, y_save, backtrack_y
+                    err,y_back, i     = self.successive_substitution_update(backtrack_y, err, sizing_evaluation, nexus, scaling, i, iteration_options)
+                    
+                    y_back_list.append(backtrack_y)
+                    err_back_list.append(err)
+                    norm_err_back_list.append(np.linalg.norm(err))
+                    min_err_back = min(np.linalg.norm(err_back_list), min_err_back)
+                    i_back+=1
+                
+                i_min_back = np.argmin(norm_err_back_list)
+                y          = y_back_list[i_min_back]
+                err        = err_back_list[i_min_back]
+                if len(norm_err_back_list)>1:
+                    print 'norm_err_back_list = ', norm_err_back_list, ' i_min_back = ', i_min_back
             #ensure it's within bounds
             #y, bound_violated = self.check_bounds(y)
             
             #ensure it's within bounds (i.e. mass doesn't go negative)
            
-            '''
-            if  norm_dy>10*norm_dy2:#norm_dy2<5.*self.tolerance**.5 and norm_dy>10*norm_dy2:
-                print 'oscillating, trying damped ss update'
-                err,y, i   = self.successive_substitution_update((y+y_save)/2.,err, sizing_evaluation, nexus, scaling, i, iteration_options)
-            '''
     
         
             
@@ -345,6 +365,7 @@ class Sizing_Loop(Data):
         print 'number of iterations total=', nexus.total_number_of_iterations
 
         nexus.sizing_loop.max_error   = max(err)
+        nexus.sizing_loop.output_error = err
         nexus.distance_to_closest_point = min_norm
         nexus.sizing_variables = y_save2
     
@@ -379,13 +400,13 @@ class Sizing_Loop(Data):
             print 'p before = ', p
             p = y_update-y #back this out in case of bounds
             print 'p after = ', p
-            
+            '''
             if np.linalg.norm(err_out)>np.linalg.norm(err):
                 print 'backtracking'
                 y_update = y+p/2.
                 err_out, y_out = sizing_evaluation(y_update, nexus, scaling)  
                 iter += 1 
-            
+            '''
             
             #save these values in case of Broyden update
             iteration_options.Jinv     = Jinv
@@ -515,15 +536,15 @@ class Sizing_Loop(Data):
         bounds_violated       = 1 #counter to determine how many bounds are violated
         while bound_violated:
             print 'bound violated, backtracking'
+            bound_violated = 0
             for j in xrange(len(y_out)):
-                if not np.isclose(y_out[j], y_update[j]):
+                
+                if not np.isclose(y_out[j], y_update[j]) or np.isnan(y_update).any():
                     y_update = y+p*backtrack_step
                     bounds_violated = bounds_violated+1
                     backtrack_step = backtrack_step*.5
-                    y_out, bound_violated = self.check_bounds(y_update)
-                   
                     break
-            
+            y_out, bound_violated = self.check_bounds(y_update)
 
         return y_update
 
