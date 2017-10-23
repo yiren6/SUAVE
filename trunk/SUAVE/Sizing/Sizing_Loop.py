@@ -63,9 +63,9 @@ class Sizing_Loop(Data):
         
         backtracking                         = Data()
         backtracking.backtracking_flag       = True     #True means you do backtracking when err isn't decreased
-        backtracking.threshhold              = 1.2      # factor times the msq at which to terminate backtracking
+        backtracking.threshhold              = 1.      # factor times the msq at which to terminate backtracking
         backtracking.max_steps               = 5
-        backtracking.multipler               = .5
+        backtracking.multiplier               = .5
         
         #assign
         self.iteration_options.backtracking  = backtracking
@@ -281,11 +281,12 @@ class Sizing_Loop(Data):
                 y_back_list        = [y]
                 err_back_list      = [err]
                 norm_err_back_list = [np.linalg.norm(err)]
+                
                 while np.linalg.norm(err)>back_thresh*np.linalg.norm(iteration_options.err_save) and i_back<backtracking.max_steps  : #while?
                     print 'backtracking'
                     print 'err, err_save = ', np.linalg.norm(err), np.linalg.norm(iteration_options.err_save)
                     p = y-y_save
-                    backtrack_y = y_save+p*backtracking.multipler
+                    backtrack_y = y_save+p*backtracking.multiplier
                     
                     
                     print 'y, y_save, backtrack_y = ', y, y_save, backtrack_y
@@ -302,10 +303,7 @@ class Sizing_Loop(Data):
                 err        = err_back_list[i_min_back]
                 if len(norm_err_back_list)>1:
                     print 'norm_err_back_list = ', norm_err_back_list, ' i_min_back = ', i_min_back
-            #ensure it's within bounds
-            #y, bound_violated = self.check_bounds(y)
-            
-            #ensure it's within bounds (i.e. mass doesn't go negative)
+   
            
     
         
@@ -378,25 +376,29 @@ class Sizing_Loop(Data):
         
         
         iteration_options.err_save = err
-        y_out, bound_violated = self.check_bounds(y_out)
+        #y_out, bound_violated = self.check_bounds(y_out)
+        #make sure it's in bounds
+        y_out = self.stay_inbounds(y, y_out)
         return err_out, y_out, iter
     
     def newton_raphson_update(self,y, err, sizing_evaluation, nexus, scaling, iter, iteration_options):
         h = iteration_options.h
         print '###begin Finite Differencing###'
         J, iter = Finite_Difference_Gradient(y,err, sizing_evaluation, nexus, scaling, iter, h)
+        print '###end Finite Differencing###'
         try:
-            
+    
             Jinv =np.linalg.inv(J)  
             p = -np.dot(Jinv,err)
             y_update = y + p
       
      
-     
+            print 'y_update here = ', y_update
             y_update = self.stay_inbounds(y, y_update)
+            
             err_out, y_out = sizing_evaluation(y_update, nexus, scaling)
             iter += 1
-            #err_out, y_update, iter = self.stay_inbounds(y, y_update, iter, nexus)
+
             print 'p before = ', p
             p = y_update-y #back this out in case of bounds
             print 'p after = ', p
@@ -514,38 +516,43 @@ class Sizing_Loop(Data):
         return err_out, y_update, iter
        
     def check_bounds(self, y):
+        y_out = 1.*y #create copy
         bound_violated = 0
         for j in xrange(len(y)):  #handle variable bounds to prevent going to weird areas (such as negative mass)
             if self.hard_min_bound:
                 if y[j]<self.min_y[j]:
-                    y[j] = self.min_y[j]*1.
+                    y_out[j] = self.min_y[j]*1.
                     bound_violated = 1
             if self.hard_max_bound:
                 if y[j]>self.max_y[j]:
-                    y[j] = self.max_y[j]*1.
+                    y_out[j] = self.max_y[j]*1.
                     bound_violated = 1
-        return y, bound_violated
+        return y_out, bound_violated
     
     def stay_inbounds(self, y, y_update):
         
         sizing_evaluation     = self.sizing_evaluation
         scaling               = self.default_scaling
         p                     = y_update-y #search step
+
         y_out, bound_violated = self.check_bounds(y_update)
-        backtrack_step        = .5
+
+        backtrack_step        = self.iteration_options.backtracking.multiplier
         bounds_violated       = 1 #counter to determine how many bounds are violated
         while bound_violated:
             print 'bound violated, backtracking'
+            print 'y_update, y_out = ',  y_update, y_out
             bound_violated = 0
             for j in xrange(len(y_out)):
-                
                 if not np.isclose(y_out[j], y_update[j]) or np.isnan(y_update).any():
                     y_update = y+p*backtrack_step
+           
+                    
                     bounds_violated = bounds_violated+1
                     backtrack_step = backtrack_step*.5
                     break
-            y_out, bound_violated = self.check_bounds(y_update)
 
+            y_out, bound_violated = self.check_bounds(y_update)
         return y_update
 
     __call__ = evaluate
