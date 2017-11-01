@@ -59,7 +59,15 @@ def carpet_plot(problem, number_of_points,  plot_obj=1, plot_const=0, sweep_inde
   
     if plot_obj==1:
         plt.figure(0)
-        CS = plt.contourf(inputs[0,:],inputs[1,:], obj, linewidths=2)
+        min_obj = np.nanmin(obj)
+        max_obj = np.nanmax(obj)
+        print 'objective = ', obj
+        print 'min_obj = ', min_obj
+        print 'max_obj = ', max_obj
+        
+        levels = np.linspace(min_obj, max_obj, 30)
+        
+        CS = plt.contourf(inputs[0,:],inputs[1,:], obj, linewidths=2, levels = levels)
         cbar = plt.colorbar(CS)
         cbar.ax.set_ylabel(obj_name)
         plt.xlabel(names[idx0])

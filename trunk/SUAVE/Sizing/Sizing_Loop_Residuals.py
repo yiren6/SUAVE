@@ -19,28 +19,39 @@ import sklearn.neighbors as neighbors
 from sklearn.preprocessing import PolynomialFeatures
 from write_sizing_outputs import write_sizing_outputs
 from read_sizing_inputs import read_sizing_inputs
+from read_sizing_residuals import read_sizing_residuals
+from write_sizing_residuals import write_sizing_residuals
 import numpy as np
 import scipy as sp
+import copy
 import time
-
-class Sizing_Loop(Data):
+try:
+    import pyOpt
+except: 
+    ImportError
+    
+class Sizing_Loop_Residuals(Data):
     def __defaults__(self):
         #parameters common to all methods
-        self.tolerance             = 1E-4
-        self.initial_step          = None  #'Default', 'Table', 'SVR'
-        self.update_method         = None  #'successive_substitution', 'newton-raphson', ;broyden
-        self.default_y             = None  #default inputs in case the guess is very far from 
-        self.default_scaling       = None  #scaling value to make sizing parameters ~1
-        self.maximum_iterations    = None  #cutoff point for sizing loop to close
-        self.output_filename       = None
-        self.sizing_evaluation     = None  #defined in the Procedure script
-        self.max_y                 = None
-        self.min_y                 = None
-        self.hard_max_bound        = False
-        self.hard_min_bound        = True
-        self.backtracking          = True
-        self.write_threshhold      = 3     #number of iterations before it writes, regardless of how close it is to currently written values
-        self.max_error             = 0.    #maximum error
+        self.tolerance                = 1E-4
+        self.initial_step             = None  #'Default', 'Table', 'SVR', GPR, Neighbors
+        self.guess_from_residuals     = True
+        self.residual_objective_index = 0 #which index to be minimized in sub optimization
+        self.residual_optimizer       = pyOpt.pySNOPT.SNOPT() #'SciPy_SLSQP
+        self.residual_filename        = 'sizing_residuals.txt'
+        self.update_method            = None  #'successive_substitution', 'newton-raphson', ;broyden
+        self.default_y                = None  #default inputs in case the guess is very far from 
+        self.default_scaling          = None  #scaling value to make sizing parameters ~1
+        self.maximum_iterations       = None  #cutoff point for sizing loop to close
+        self.output_filename          = None
+        self.sizing_evaluation        = None  #defined in the Procedure script
+        self.max_y                    = None
+        self.min_y                    = None
+        self.hard_max_bound           = False
+        self.hard_min_bound           = True
+        self.backtracking             = True
+        self.write_threshhold         = 3     #number of iterations before it writes, regardless of how close it is to currently written values
+        self.max_error                = 0.    #maximum error
        
         #parameters that may only apply to certain methods
         self.iteration_options                                   = Data()
@@ -57,13 +68,13 @@ class Sizing_Loop(Data):
         self.iteration_options.min_surrogate_length              = 4                #minimum number data points needed before SVR is used
         self.iteration_options.number_of_surrogate_calls         = 0
         
-        self.iteration_options.minimum_training_samples          = 1E6
+        self.iteration_options.minimum_training_samples         = 1E6
         self.iteration_options.newton_raphson_damping_threshhold = 5E-5
         
         
         backtracking                         = Data()
         backtracking.backtracking_flag       = True     #True means you do backtracking when err isn't decreased
-        backtracking.threshhold              = 1.      # factor times the msqe at which to terminate backtracking
+        backtracking.threshhold              = 1.      # factor times the msq at which to terminate backtracking
         backtracking.max_steps               = 5
         backtracking.multiplier               = .5
         
@@ -83,11 +94,11 @@ class Sizing_Loop(Data):
                 problem_inputs.append(value)  #writing to file is easier when you use list
             
             nexus.problem_inputs = problem_inputs
-            opt_flag = 1 #tells if you're running an optimization case or not-used in writing outputs
-        else:
-            opt_flag = 0
+            #opt_flag = 1 #tells if you're running an optimization case or not-used in writing outputs
+        #else:
+            #opt_flag = 0
   
-        
+        opt_flag = 1
         #unpack inputs
         tol               = self.tolerance #percentage difference in mass and energy between iterations
         h                 = self.iteration_options.h 
@@ -108,9 +119,9 @@ class Sizing_Loop(Data):
         min_norm = 1000.
         if self.initial_step != 'Default':
             data_inputs, data_outputs, read_success = read_sizing_inputs(self, scaled_inputs)
-            
-            if read_success:
-                           
+            sizing_data, residual_data, read_success_residuals = read_sizing_residuals(self, scaled_inputs)
+                
+            if read_success: 
                 diff = np.subtract(scaled_inputs, data_inputs) #check how close inputs are to tabulated values  
                 #find minimum entry and corresponding index 
                 imin_dist = -1 
@@ -177,23 +188,58 @@ class Sizing_Loop(Data):
                         #now run the fits/guesses  
                     
                         iteration_options.number_of_surrogate_calls += 1
-                    y = []    
+                    y = []  
+                    main_regr = regr
                     input_for_regr = scaled_inputs.reshape(1,-1)
-                    for j in xrange(len(data_outputs[0,:])):
-                        y_surrogate = regr.fit(data_inputs, data_outputs[:,j])
+                    
+                    
+                    
+                   
+                    if self.guess_from_residuals and read_success_residuals and  len(data_outputs[:,0])> iteration_options.min_surrogate_length:  
+                        #run a constrained optimization problem on this
                        
-                        y.append(y_surrogate.predict(input_for_regr )[0])    
-                        #check if it goes outside bounds for sizing variables: use table in this case
-                        #y_check, bound_violated = self.check_bounds(y)
+                        resids_surrogates = []
+                        for j in xrange(len(residual_data[0,:])):
+                            regr            = copy.copy(main_regr)
+                            resid_surrogate = regr.fit(sizing_data, residual_data[:,j])
+                            resids_surrogates.append(resid_surrogate)
+                            
+                        residual_problem                        = Residual_Problem()
+                        residual_problem.objective_index        = self.residual_objective_index
+                        residual_problem.constraints_surrogates = resids_surrogates
+                        residual_problem.x                      = scaled_inputs
+                        opt_prob = pyOpt.Optimization('residual problem', residual_problem.compute)
+                        for j in xrange(len(self.default_y)): #add design variables
+                            opt_prob.addVar('x'+str(j+1), 'c', lower = self.min_y[j], upper = self.max_y[j], value = self.default_y[j])
+                        for j in xrange(len(resids_surrogates)):
+                            opt_prob.addCon('g'+str(j+1), type = 'e', equal = self.tolerance)
+                        opt_prob.addObj('f')
+                        opt_sizing_outputs = self.residual_optimizer(opt_prob, sens_step = 1E-2)
+                        print 'opt_sizing_outputs =', opt_sizing_outputs
+                        print 'opt_sizing_outputs[0] = ', opt_sizing_outputs[0] 
+                        print 'opt_sizing_outputs[1] = ', opt_sizing_outputs[1]
                         
-                        if y[j] > self.max_y[j] or y[j]< self.min_y[j]:
-                            print 'sizing variable range violated, val = ', y[j], ' j = ', j
-                            n_neighbors = min(iteration_options.n_neighbors, len(data_outputs))
-                            regr_backup = neighbors.KNeighborsRegressor( n_neighbors = n_neighbors)
-                            y_surrogate = regr_backup.fit(data_inputs, data_outputs[:,j])
-                            y[j]        = y_surrogate.predict( input_for_regr)[0]
+                        y = opt_sizing_outputs[1]
                         
-                    y = np.array(y)
+                        print 'y = ', y
+                        #now residuals surrogates created, now set up an optimization problem
+                        #start with SLSQP as optimizer
+                        
+                    else:
+                        for j in xrange(len(data_outputs[0,:])):
+                            y_surrogate = regr.fit(data_inputs, data_outputs[:,j])
+                            y.append(y_surrogate.predict(input_for_regr)[0])    
+                            #check if it goes outside bounds for sizing variables: use table in this case
+                            #y_check, bound_violated = self.check_bounds(y)
+                            
+                            if y[j] > self.max_y[j] or y[j]< self.min_y[j]:
+                                print 'sizing variable range violated, val = ', y[j], ' j = ', j
+                                n_neighbors = min(iteration_options.n_neighbors, len(data_outputs))
+                                regr_backup = neighbors.KNeighborsRegressor( n_neighbors = n_neighbors)
+                                y_surrogate = regr_backup.fit(data_inputs, data_outputs[:,j])
+                                y[j]        = y_surrogate.predict(input_for_regr)[0]
+                            
+                        y = np.array(y)
                     
 
         # initialize previous sizing values
@@ -321,7 +367,28 @@ class Sizing_Loop(Data):
             
             print 'err = ', err
             
+            #now figure out how close things are
+            if read_success_residuals:
+                #print 'y_save = ', y_save
+                #print 'scaled_inputs = ', scaled_inputs
+                current_point = np.concatenate((y_save, scaled_inputs))
+                #print ' current_point = ',  current_point
+                #print 'residual_data = ', residual_data
+                diff = np.subtract(sizing_data, current_point)
+                imin_dist = -1 
+                for k in xrange(len(diff[:,-1])):
+                    row = diff[k,:]
+                    row_norm = np.linalg.norm(row)
+                    if row_norm < min_norm:
+                        min_norm = row_norm
+                        imin_dist = k*1 
+                print
+            if min_norm>2. or read_success_residuals==0:
+                write_sizing_residuals(self, y_save, scaled_inputs, err)
+            
+            
             #uncomment this when you want to write error at each iteration
+            
             file=open('y_err_values.txt', 'ab')   
             file.write('global iteration = ')
             file.write(str( nexus.total_number_of_iterations))
@@ -333,7 +400,7 @@ class Sizing_Loop(Data):
             file.write(str(scaled_inputs))
             file.write(', y = ')
             file.write(', ')
-            file.write(str(y))
+            file.write(str(y_save2))
             file.write(', err = ')
             file.write(str(err.tolist()))
             file.write('\n') 
@@ -564,8 +631,30 @@ class Sizing_Loop(Data):
         
     __call__ = evaluate
     
-
-    
+class Residual_Problem(Data):
+    def __defaults__(self):
+        self.sizing_loop               = None
+        self.objective_index           = 0
+        self.constraints_surrogates    = None
+        self.x                         = None
+    def compute(self, y):  #x is fixed in this problem, change y
+        x = self.x
+        f = y[self.objective_index]
+        input_vals = [y.tolist()+x.tolist()]
+        print 'x = ', x
+        print 'input_vals = ', input_vals
+        
+        g = []
+        for j in range(len(self.constraints_surrogates)):
+            g.append(self.constraints_surrogates[j].predict(input_vals)[0])
+        #g = np.array(g) #uncomment if particular surrogate saves each value as array
+        
+        fail  = np.array(np.isnan(f.tolist()) or np.isnan(np.array(g).any())).astype(int)
+        #print 'f,g = ',  f, g
+        print 'g = ', g
+        return f, g, fail
+        
+    __call__ = compute
 
 
     

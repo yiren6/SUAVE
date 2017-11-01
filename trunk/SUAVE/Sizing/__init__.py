@@ -1,3 +1,6 @@
 from Sizing_Loop import Sizing_Loop
+from Sizing_Loop_Residuals import Sizing_Loop_Residuals
 from read_sizing_inputs import read_sizing_inputs
 from write_sizing_outputs import write_sizing_outputs
+from read_sizing_residuals import read_sizing_residuals
+from write_sizing_residuals import write_sizing_residuals

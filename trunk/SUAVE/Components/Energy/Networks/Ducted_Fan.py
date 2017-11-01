@@ -14,7 +14,6 @@ import SUAVE
 import numpy as np
 
 from SUAVE.Core import Data
-from SUAVE.Analyses import Results
 from SUAVE.Components.Propulsors.Propulsor import Propulsor
 
 # ----------------------------------------------------------------------
@@ -129,7 +128,7 @@ class Ducted_Fan(Propulsor):
         results.power               = np.divide(output_power[:,0],propulsive_efficiency[:,0])
         
         # store data
-        results_conditions = Results
+        results_conditions = Data
         
         conditions.propulsion.acoustic_outputs.fan = results_conditions(
         exit_static_temperature             = fan_nozzle.outputs.static_temperature,

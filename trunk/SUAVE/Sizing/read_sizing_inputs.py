@@ -16,6 +16,7 @@ import numpy as np
 def read_sizing_inputs(sizing_loop, opt_inputs):
     try:
         file_in        = open(sizing_loop.output_filename)
+        print 'sizing_loop.output_filename = ', sizing_loop.output_filename
         read_success   = 1
     
     except IOError:
