@@ -35,7 +35,10 @@ class Sizing_Loop_Residuals(Data):
         #parameters common to all methods
         self.tolerance                = 1E-4
         self.initial_step             = None  #'Default', 'Table', 'SVR', GPR, Neighbors
-        self.guess_from_residuals     = True
+        self.guess_from_residuals     = False
+        self.sizing_logic             = [0] #list based on sizing residuals to determine aircraft families
+        self.sizing_logic_list        = [[0]] #list of sizing logic results that can be seen
+        self.family_sizing            = False
         self.residual_objective_index = 0 #which index to be minimized in sub optimization
         self.residual_optimizer       = pyOpt.pySNOPT.SNOPT() #'SciPy_SLSQP
         self.residual_filename        = 'sizing_residuals.txt'
@@ -117,21 +120,44 @@ class Sizing_Loop_Residuals(Data):
         
         #determine the initial step
         min_norm = 1000.
+        sizing_logic = self.sizing_logic
         if self.initial_step != 'Default':
-            data_inputs, data_outputs, read_success = read_sizing_inputs(self, scaled_inputs)
+            if self.family_sizing:
+                min_dist          = []
+                data_inputs_list  = []
+                data_outputs_list = []
+                read_success_list = []
+                min_norm_list     = []
+                i_min_norm_list   = []
+                
+                for j in xrange(len(self.sizing_logic_list)):
+                    data_inputs, data_outputs, read_success = read_sizing_inputs(self, self.output_filename+str(sizing_logic)+'.txt', scaled_inputs)
+                    read_success_list.append(read_success)
+                    data_inputs_list.append(data_inputs)
+                    data_outputs_list.append(data_outputs)
+                    if read_success:
+                        min_norm, imin_norm = find_min_norm(scaled_inputs, data_inputs)
+                        min_norm_list.append(min_norm)
+                        i_min_norm_list.append(imin_norm)
+                    else:
+                        min_norm_list.append(1E9)
+                        i_min_norm_list.append(0)
+                    
+                min_norm     = np.min(min_norm_list)
+                i_logic      = np.argmin(min_norm_list) #index relating to closest point 
+                data_inputs  = data_inputs_list[i_logic]
+                data_outputs = data_outputs_list[i_logic]
+                read_success = read_success_list[i_logic]
+            else:       
+                data_inputs, data_outputs, read_success = read_sizing_inputs(self, self.output_filename+'.txt', scaled_inputs)
+                if read_success:
+                    min_norm, i_min_dist = find_min_norm(scaled_inputs, data_inputs)
+                
             sizing_data, residual_data, read_success_residuals = read_sizing_residuals(self, scaled_inputs)
                 
             if read_success: 
-                diff = np.subtract(scaled_inputs, data_inputs) #check how close inputs are to tabulated values  
-                #find minimum entry and corresponding index 
-                imin_dist = -1 
-                for k in xrange(len(diff[:,-1])):
-                    row = diff[k,:]
-                    row_norm = np.linalg.norm(row)
-                    if row_norm < min_norm:
-                        min_norm = row_norm
-                        imin_dist = k*1 
-
+               
+                
                 if min_norm<iteration_options.max_initial_step: #make sure data is close to current guess
                     if self.initial_step == 'Table' or min_norm<iteration_options.min_surrogate_step or len(data_outputs[:,0])< iteration_options.min_surrogate_length:
                         regr    = neighbors.KNeighborsRegressor( n_neighbors = 1)
@@ -374,15 +400,8 @@ class Sizing_Loop_Residuals(Data):
                 current_point = np.concatenate((y_save, scaled_inputs))
                 #print ' current_point = ',  current_point
                 #print 'residual_data = ', residual_data
-                diff = np.subtract(sizing_data, current_point)
-                imin_dist = -1 
-                for k in xrange(len(diff[:,-1])):
-                    row = diff[k,:]
-                    row_norm = np.linalg.norm(row)
-                    if row_norm < min_norm:
-                        min_norm = row_norm
-                        imin_dist = k*1 
-                print
+                min_norm, imin_dist = find_min_norm(sizing_data, current_point)
+               
             if min_norm>2. or read_success_residuals==0:
                 write_sizing_residuals(self, y_save, scaled_inputs, err)
             
@@ -419,7 +438,10 @@ class Sizing_Loop_Residuals(Data):
             if converged and (min_norm>self.iteration_options.min_write_step or i>self.write_threshhold): #now output to file, writing when it's either not a FD step, or it takes a long time to converge
             #make sure they're in right format      
             #use y_save2, as it makes derivatives consistent
-                write_sizing_outputs(self, y_save2, problem_inputs)
+                if self.family_sizing:
+                    write_sizing_outputs(self.output_filename+str(sizing_logic)+'.txt', y_save2, problem_inputs)
+                else:
+                    write_sizing_outputs(self.output_filename+'.txt', y_save2, problem_inputs)
         else:
             converged = 0
         nexus.sizing_loop.converged = converged
@@ -675,7 +697,17 @@ def Finite_Difference_Gradient(x,f , my_function, inputs, scaling, iter, h):
 
     return J, iter
 
-
+def find_min_norm(scaled_inputs, data_inputs):
+    min_norm = 1E9
+    diff = np.subtract(scaled_inputs, data_inputs) #check how close inputs are to tabulated values  
+    #find minimum entry and corresponding index 
+    imin_dist = -1 
+    for k in xrange(len(diff[:,-1])):
+        row = diff[k,:]
+        row_norm = np.linalg.norm(row)
+        if row_norm < min_norm:
+            min_norm = row_norm
+            imin_dist = k*1 
     
-        
+    return min_norm, imin_dist
     
