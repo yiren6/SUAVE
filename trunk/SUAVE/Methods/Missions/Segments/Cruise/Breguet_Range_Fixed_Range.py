@@ -93,11 +93,11 @@ def update_weights(segment,state):
     # unpack
     conditions = state.conditions
     mi         = conditions.weights.total_mass[0,0]
-    g          = conditions.freestream.gravity[0,0]
+    g          = np.mean(conditions.freestream.gravity)
     Wi         = mi*g
-    V          = conditions.freestream.velocity[0,0]
-    L          = conditions.aerodynamics.lift_coefficient[0,0]
-    D          = conditions.aerodynamics.drag_coefficient[0,0]
+    V          = np.mean(conditions.freestream.velocity)
+    L          = np.mean(conditions.aerodynamics.lift_coefficient)
+    D          = np.mean(conditions.aerodynamics.drag_coefficient)
     mdot       = conditions.weights.vehicle_mass_rate[0,0]
     thrust     = conditions.frames.body.thrust_force_vector[0,0]
     #mdot       = mdot * Units.hr
