@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------
 
 import numpy as np
-from SUAVE.Core import Units
+from SUAVE.Core import Units, Data
 
 # ----------------------------------------------------------------------
 #  Initialize Conditions
