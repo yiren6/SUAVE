@@ -114,6 +114,91 @@ def update_weights(segment,state):
 
     return
 
+def update_aerodynamics(segment,state):
+    """ Gets aerodynamics conditions
+    
+        Assumptions:
+        +X out nose
+        +Y out starboard wing
+        +Z down
+
+        Inputs:
+            segment.analyses.aerodynamics_model                  [Function]
+            aerodynamics_model.settings.maximum_lift_coefficient [unitless]
+            aerodynamics_model.geometry.reference_area           [meter^2]
+            state.conditions.freestream.dynamic_pressure         [pascals]
+
+        Outputs:
+            conditions.aerodynamics.lift_coefficient [unitless]
+            conditions.aerodynamics.drag_coefficient [unitless]
+            conditions.frames.wind.lift_force_vector [newtons]
+            conditions.frames.wind.drag_force_vector [newtons]
+
+        Properties Used:
+        N/A
+    """
+    
+    # unpack
+    conditions         = state.conditions
+    aerodynamics_model = segment.analyses.aerodynamics
+    q                  = state.conditions.freestream.dynamic_pressure
+    Sref               = aerodynamics_model.geometry.reference_area
+    g                  = conditions.freestream.gravity
+   
+        
+    # dimensionalize
+    L = state.ones_row(3) * 0.0
+    D = state.ones_row(3) * 0.0
+    
+    LD = segment.lift_drag_ratio
+
+    L[:,2] = -conditions.weights.total_mass[:,0]*g[:,0]
+    D[:,0] = L[:,2]/LD
+    
+    CL = -np.transpose(np.atleast_2d(L[:,2]))/q/Sref
+    CD = -np.transpose(np.atleast_2d(D[:,0]))/q/Sref
+   
+
+    # pack conditions
+    conditions.aerodynamics.lift_coefficient = CL
+    conditions.aerodynamics.drag_coefficient = CD
+    conditions.frames.wind.lift_force_vector[:,:] = L[:,:] # z-axis
+    conditions.frames.wind.drag_force_vector[:,:] = D[:,:] # x-axis
+    
+def update_thrust(segment,state):
+    """ Evaluates the energy network to find the thrust force and mass rate
+
+        Inputs -
+            segment.analyses.energy_network    [Function]
+            state                              [Data]
+
+        Outputs -
+            state.conditions:
+               frames.body.thrust_force_vector [Newtons]
+               weights.vehicle_mass_rate       [kg/s]
+
+
+        Assumptions -
+
+
+    """    
+    
+    ## unpack
+    #energy_model = segment.analyses.energy
+
+    ## evaluate
+    #results   = energy_model.evaluate_thrust(state)
+    
+    thrust = -state.conditions.frames.wind.drag_force_vector[:,0]
+    
+    tsfc = segment.thrust_specific_fuel_consumption
+    mass_flow = np.transpose(np.atleast_2d(thrust*tsfc))
+
+    # pack conditions
+    conditions = state.conditions
+    conditions.frames.body.thrust_force_vector = -state.conditions.frames.wind.drag_force_vector
+    conditions.weights.vehicle_mass_rate       = mass_flow
+
 def expand_state(segment,state):
     
     """Makes all vectors in the state the same size.
