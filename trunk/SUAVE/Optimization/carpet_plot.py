@@ -85,7 +85,7 @@ def carpet_plot(problem, number_of_points,  plot_obj=1, plot_const=0, sweep_inde
   
     if plot_obj==1:
         plt.figure(0)
-        CS = plt.contourf(inputs[0,:],inputs[1,:], obj, linewidths=2)
+        CS = plt.contourf(inputs[0,:],inputs[1,:], obj, 40, linewidths=2)
         cbar = plt.colorbar(CS)
         cbar.ax.set_ylabel(obj_name)
         plt.xlabel(names[idx0])
