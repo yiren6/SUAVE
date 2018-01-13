@@ -13,7 +13,7 @@ from SUAVE.Core import (
     Data, Container,
 )
 from SUAVE.Methods.Propulsion.turbojet_sizing import turbojet_sizing
-
+from SUAVE.Methods.Propulsion.turbofan_sizing import turbofan_sizing
 
 def vehicle_setup(source_ratio=1.):
 
@@ -272,6 +272,7 @@ def vehicle_setup(source_ratio=1.):
     turbojet.engine_length     = 12.0
     turbojet.nacelle_diameter  = 1.3
     turbojet.inlet_diameter    = 1.1
+    #turbojet.bypass_ratio      = 0.0001
     turbojet.areas             = Data()
     turbojet.areas.wetted      = 12.5*4.7*2. # 4.7 is outer perimeter on one side
     turbojet.origin            = [[37.,6.,-1.3],[37.,5.3,-1.3],[37.,-5.3,-1.3],[37.,-6.,-1.3]]
@@ -303,6 +304,7 @@ def vehicle_setup(source_ratio=1.):
     # setup
     inlet_nozzle.polytropic_efficiency = 0.98
     inlet_nozzle.pressure_ratio        = 1.0
+    inlet_nozzle.pressure_recovery     = 0.94
     
     # add to network
     turbojet.append(inlet_nozzle)
@@ -378,7 +380,7 @@ def vehicle_setup(source_ratio=1.):
     # setup
     combustor.efficiency                = 0.99
     combustor.alphac                    = 1.0     
-    combustor.turbine_inlet_temperature = 1450.
+    combustor.turbine_inlet_temperature = 1450. + 273.15
     combustor.pressure_ratio            = 1.0
     combustor.fuel_data                 = SUAVE.Attributes.Propellants.Jet_A()    
     
@@ -401,9 +403,33 @@ def vehicle_setup(source_ratio=1.):
     turbojet.append(nozzle)
     
     # ------------------------------------------------------------------
-    #  Component 9 - Divergening Nozzle
+    #  Component 9 - Fan Nozzle
+    
+    # instantiate
+    nozzle = SUAVE.Components.Energy.Converters.Expansion_Nozzle()   
+    nozzle.tag = 'fan_nozzle'
+
+    # setup
+    nozzle.polytropic_efficiency = 0.95
+    nozzle.pressure_ratio        = 0.99    
+    
+    # add to network
+    turbojet.append(nozzle)
     
     
+    # ------------------------------------------------------------------
+    #  Component 10 - Fan
+    
+    # instantiate
+    fan = SUAVE.Components.Energy.Converters.Fan()   
+    fan.tag = 'fan'
+
+    # setup
+    fan.polytropic_efficiency = 0.93
+    fan.pressure_ratio        = 1.7    
+    
+    # add to network
+    turbojet.append(fan)
     
     
     # ------------------------------------------------------------------
@@ -411,14 +437,23 @@ def vehicle_setup(source_ratio=1.):
     thrust = SUAVE.Components.Energy.Processes.Thrust()       
     thrust.tag ='compute_thrust'
  
+    ##total design thrust (includes all the engines)
+    #thrust.total_design             = 4*140000. * Units.N #Newtons
+ 
+    ## Note: Sizing builds the propulsor. It does not actually set the size of the turbojet
+    ##design sizing conditions
+    #altitude      = 0.0*Units.ft
+    #mach_number   = 0.01
+    #isa_deviation = 0.
+    
     #total design thrust (includes all the engines)
-    thrust.total_design             = 4*140000. * Units.N #Newtons
+    thrust.total_design             = 40000. * Units.lbf
  
     # Note: Sizing builds the propulsor. It does not actually set the size of the turbojet
     #design sizing conditions
-    altitude      = 0.0*Units.ft
-    mach_number   = 0.01
-    isa_deviation = 0.
+    altitude      = 60000.0*Units.ft
+    mach_number   = 2.02
+    isa_deviation = 0.    
     
     # add to network
     turbojet.thrust = thrust

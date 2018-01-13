@@ -63,7 +63,7 @@ def main():
     results = mission.evaluate()
     
     # load older results
-    #save_results(results)
+    save_results(results)
     old_results = load_results()   
 
     # plt the old results
@@ -238,6 +238,31 @@ def plot_mission(results,line_style='bo-'):
     axes.set_xlabel('Time (mins)')
     axes.set_ylabel('Vehicle Mass (kg)')
     axes.grid(True)
+    
+    fig = plt.figure("Engine Performance",figsize=(8,6))
+    for segment in results.segments.values():
+
+        time   = segment.conditions.frames.inertial.time[:,0] / Units.min
+        Lift   = -segment.conditions.frames.wind.lift_force_vector[:,2]
+        Drag   = -segment.conditions.frames.wind.drag_force_vector[:,0]*0.224808943
+        Thrust = segment.conditions.frames.body.thrust_force_vector[:,0]*0.224808943
+        eta  = segment.conditions.propulsion.throttle[:,0]
+        mdot   = segment.conditions.weights.vehicle_mass_rate[:,0]
+        thrust =  segment.conditions.frames.body.thrust_force_vector[:,0]
+        sfc    = 3600. * mdot / 0.1019715 / thrust	
+
+
+        axes = fig.add_subplot(2,1,1)
+        axes.plot( time , Thrust , line_style )
+        #axes.set_xlabel('Time (min)')
+        axes.set_ylabel('Thrust (lbf)')
+        axes.grid(True)
+
+        axes = fig.add_subplot(2,1,2)
+        axes.plot( time , sfc , line_style )
+        axes.set_xlabel('Time (min)')
+        axes.set_ylabel('TSFC (lb/lbf-hr)')
+        axes.grid(True)	    
 
 
     # ------------------------------------------------------------------
