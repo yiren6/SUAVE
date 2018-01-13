@@ -14,3 +14,4 @@ from Dual_Battery_Ducted_Fan import Dual_Battery_Ducted_Fan
 from Propulsor_Surrogate import Propulsor_Surrogate
 from Battery_Propeller import Battery_Propeller
 from Lift_Forward_Propulsor import Lift_Forward_Propulsor
+from Propulsor_TSFC import Propulsor_TSFC
