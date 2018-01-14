@@ -233,5 +233,40 @@ class Turbojet_Super(Propulsor):
         conditions = state.conditions
         thrust     = self.thrust
         thrust.size(conditions)
+        
+    def engine_out(self,state):
+        """ Lose an engine
+    
+            Assumptions:
+            None
+    
+            Source:
+            N/A
+    
+            Inputs:
+            None
+    
+            Outputs:
+            None
+    
+            Properties Used:
+            N/A
+        """           
+        
+        temp_throttle = np.zeros(len(state.conditions.propulsion.throttle))
+        
+        for i in xrange(0,len(state.conditions.propulsion.throttle)):
+            temp_throttle[i] = state.conditions.propulsion.throttle[i]
+            state.conditions.propulsion.throttle[i] = 1.0
+        
+        results = self.evaluate_thrust(state)
+        
+        for i in xrange(0,len(state.conditions.propulsion.throttle)):
+            state.conditions.propulsion.throttle[i] = temp_throttle[i]
+        
+        results.thrust_force_vector = results.thrust_force_vector/self.number_of_engines*(self.number_of_engines-1)
+        results.vehicle_mass_rate   = results.vehicle_mass_rate/self.number_of_engines*(self.number_of_engines-1)
+    
+        return results        
 
     __call__ = evaluate_thrust
