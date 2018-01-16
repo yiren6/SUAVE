@@ -63,7 +63,7 @@ def main():
     results = mission.evaluate()
     
     # load older results
-    save_results(results)
+    #save_results(results)
     old_results = load_results()   
 
     # plt the old results
@@ -511,7 +511,7 @@ def mission_setup(analyses):
     segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
     segment.tag = "climb_1"
     
-    segment.analyses.extend( analyses.takeoff )
+    segment.analyses.extend( analyses.cruise )
     
     segment.altitude_start = 0.0   * Units.km
     segment.altitude_end   = 3.05   * Units.km
@@ -538,40 +538,113 @@ def mission_setup(analyses):
     # add to mission
     mission.append_segment(segment)
     
+    afterburning_segments = True
     
-    # ------------------------------------------------------------------
-    #   Third Climb Segment: linear Mach, constant segment angle 
-    # ------------------------------------------------------------------    
+    if afterburning_segments == False:
     
-    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
-    segment.tag = "climb_3"
+        # ------------------------------------------------------------------
+        #   Third Climb Segment: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_3"
+        
+        segment.analyses.extend( analyses.cruise )
+        
+        segment.altitude_end = 7.60   * Units.km
+        segment.mach_start   = 0.64
+        segment.mach_end     = 1.0
+        segment.climb_rate   = 5.05  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)
+        
+        # ------------------------------------------------------------------
+        #   Fourth Climb Segment: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_4"
+        
+        segment.analyses.extend( analyses.cruise )
+        
+        segment.altitude_end = 15.24   * Units.km
+        segment.mach_start   = 1.0
+        segment.mach_end     = 2.02
+        segment.climb_rate   = 5.08  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)
+        
+    else:
     
-    segment.analyses.extend( analyses.cruise )
-    
-    segment.altitude_end = 7.60   * Units.km
-    segment.mach_start   = 0.64
-    segment.mach_end     = 1.0
-    segment.climb_rate   = 5.05  * Units['m/s']
-    
-    # add to mission
-    mission.append_segment(segment)
-    
-    # ------------------------------------------------------------------
-    #   Fourth Climb Segment: linear Mach, constant segment angle 
-    # ------------------------------------------------------------------    
-    
-    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
-    segment.tag = "climb_4"
-    
-    segment.analyses.extend( analyses.cruise )
-    
-    segment.altitude_end = 15.24   * Units.km
-    segment.mach_start   = 1.0
-    segment.mach_end     = 2.02
-    segment.climb_rate   = 5.08  * Units['m/s']
-    
-    # add to mission
-    mission.append_segment(segment)
+        # ------------------------------------------------------------------
+        #   Third Climb Segment: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_3"
+        
+        segment.analyses.extend( analyses.cruise )
+        
+        segment.altitude_end = 7.18   * Units.km
+        segment.mach_start   = 0.64
+        segment.mach_end     = 0.95
+        segment.climb_rate   = 5.05  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)
+        
+        # ------------------------------------------------------------------
+        #   Third Climb Segment Part 2: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_31"
+        
+        segment.analyses.extend( analyses.climb )
+        
+        segment.altitude_end = 7.60   * Units.km
+        segment.mach_start   = 0.95
+        segment.mach_end     = 1.0
+        segment.climb_rate   = 5.05  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)    
+        
+        # ------------------------------------------------------------------
+        #   Fourth Climb Segment: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_4"
+        
+        segment.analyses.extend( analyses.climb )
+        
+        segment.altitude_end = 12.84   * Units.km
+        segment.mach_start   = 1.0
+        segment.mach_end     = 1.7
+        segment.climb_rate   = 5.08  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)    
+        
+        # ------------------------------------------------------------------
+        #   Fourth Climb Segment Part 2: linear Mach, constant segment angle 
+        # ------------------------------------------------------------------    
+        
+        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+        segment.tag = "climb_41"
+        
+        segment.analyses.extend( analyses.cruise )
+        
+        segment.altitude_end = 15.24   * Units.km
+        segment.mach_start   = 1.7
+        segment.mach_end     = 2.02
+        segment.climb_rate   = 5.08  * Units['m/s']
+        
+        # add to mission
+        mission.append_segment(segment)      
     
 
     # ------------------------------------------------------------------

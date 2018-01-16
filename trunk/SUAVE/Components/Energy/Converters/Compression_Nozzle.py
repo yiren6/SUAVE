@@ -120,7 +120,7 @@ class Compression_Nozzle(Energy_Component):
         
         #--Getting the output stagnation quantities
         Pt_out  = Pt_in*pid*eta_rec
-        Tt_out  = Tt_in*pid**((gamma-1)/(gamma*etapold))
+        Tt_out  = Tt_in*(pid*eta_rec)**((gamma-1)/(gamma*etapold))
         ht_out  = Cp*Tt_out
         
         # in case pressures go too low

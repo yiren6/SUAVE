@@ -51,9 +51,10 @@ class Turbojet_Super(Propulsor):
 
         #setting the default values
         self.tag = 'Turbojet'
-        self.number_of_engines = 1.0
-        self.nacelle_diameter  = 1.0
-        self.engine_length     = 1.0
+        self.number_of_engines  = 1.0
+        self.nacelle_diameter   = 1.0
+        self.engine_length      = 1.0
+        self.afterburner_active = False
 
     _component_root_map = None
 
@@ -101,6 +102,10 @@ class Turbojet_Super(Propulsor):
         combustor                 = self.combustor
         high_pressure_turbine     = self.high_pressure_turbine
         low_pressure_turbine      = self.low_pressure_turbine
+        try:
+            afterburner               = self.afterburner
+        except:
+            pass
         core_nozzle               = self.core_nozzle
         thrust                    = self.thrust
         number_of_engines         = self.number_of_engines        
@@ -167,10 +172,24 @@ class Turbojet_Super(Propulsor):
 
         #flow through the low pressure turbine
         low_pressure_turbine(conditions)
+        
+        if self.afterburner_active == True:
+            #link the core nozzle to the afterburner
+            afterburner.inputs.stagnation_temperature              = low_pressure_turbine.outputs.stagnation_temperature
+            afterburner.inputs.stagnation_pressure                 = low_pressure_turbine.outputs.stagnation_pressure   
+            afterburner.inputs.nondim_ratio                        = 1.0 + combustor.outputs.fuel_to_air_ratio
+            
+            #flow through the afterburner
+            afterburner(conditions)
 
-        #link the core nozzle to the low pressure turbine
-        core_nozzle.inputs.stagnation_temperature              = low_pressure_turbine.outputs.stagnation_temperature
-        core_nozzle.inputs.stagnation_pressure                 = low_pressure_turbine.outputs.stagnation_pressure
+            #link the core nozzle to the afterburner
+            core_nozzle.inputs.stagnation_temperature              = afterburner.outputs.stagnation_temperature
+            core_nozzle.inputs.stagnation_pressure                 = afterburner.outputs.stagnation_pressure   
+            
+        else:
+            #link the core nozzle to the low pressure turbine
+            core_nozzle.inputs.stagnation_temperature              = low_pressure_turbine.outputs.stagnation_temperature
+            core_nozzle.inputs.stagnation_pressure                 = low_pressure_turbine.outputs.stagnation_pressure
 
         #flow through the core nozzle
         core_nozzle(conditions)
@@ -182,7 +201,10 @@ class Turbojet_Super(Propulsor):
         thrust.inputs.core_nozzle                              = core_nozzle.outputs
 
         #link the thrust component to the combustor
-        thrust.inputs.fuel_to_air_ratio                        = combustor.outputs.fuel_to_air_ratio
+        thrust.inputs.fuel_to_air_ratio                        = combustor.outputs.fuel_to_air_ratio 
+        if self.afterburner_active == True:
+            # previous fuel ratio is neglected when the afterburner fuel ratio is calculated
+            thrust.inputs.fuel_to_air_ratio += afterburner.outputs.fuel_to_air_ratio
 
         #link the thrust component to the low pressure compressor 
         thrust.inputs.total_temperature_reference              = low_pressure_compressor.outputs.stagnation_temperature

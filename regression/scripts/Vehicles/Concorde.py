@@ -386,6 +386,23 @@ def vehicle_setup(source_ratio=1.):
     
     # add to network
     turbojet.append(combustor)
+    
+    # ------------------------------------------------------------------
+    #  Afterburner
+    
+    # instantiate    
+    afterburner = SUAVE.Components.Energy.Converters.Combustor()   
+    afterburner.tag = 'afterburner'
+    
+    # setup
+    afterburner.efficiency                = 0.41
+    afterburner.alphac                    = 1.0     
+    afterburner.turbine_inlet_temperature = 1975
+    afterburner.pressure_ratio            = 1.0
+    afterburner.fuel_data                 = SUAVE.Attributes.Propellants.Jet_A()    
+    
+    # add to network
+    turbojet.append(afterburner)    
 
     
     # ------------------------------------------------------------------
@@ -497,6 +514,17 @@ def configs_setup(vehicle):
     
     configs.append(config)
     
+    # ------------------------------------------------------------------
+    #   Afterburner Climb Configuration
+    # ------------------------------------------------------------------
+    
+    config = SUAVE.Components.Configs.Config(base_config)
+    config.tag = 'climb'
+    
+    config.propulsors.turbojet.afterburner_active = True
+    
+    configs.append(config)    
+    
     
     # ------------------------------------------------------------------
     #   Takeoff Configuration
@@ -510,6 +538,8 @@ def configs_setup(vehicle):
     
     config.V2_VS_ratio = 1.21
     config.maximum_lift_coefficient = 2.
+    
+    config.propulsors.turbojet.afterburner_active = True
     
     configs.append(config)
     
