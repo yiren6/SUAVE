@@ -3,17 +3,22 @@ from sklearn import gaussian_process
 import numpy as np
 import pylab as plt
 
-def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',bounds=None):
+def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',bounds=None,analysis_type='Euler'):
     
     opt_points   = np.load(opt_file)
     drag_results = np.load(drag_file)
     
     mach_scale = np.mean(opt_points[:,0])
-    re_scale   = np.mean(opt_points[:,1])
-    cl_scale   = np.mean(opt_points[:,2])
-    tc_scale   = np.mean(opt_points[:,3])
+    cl_scale   = np.mean(opt_points[:,1])
+    tc_scale   = np.mean(opt_points[:,2])
     
-    opt_point_scale = np.array([mach_scale,re_scale,cl_scale,tc_scale])
+    if analysis_type == 'Euler':
+        opt_point_scale = np.array([mach_scale,cl_scale,tc_scale])
+    elif analysis_type == 'RANS':
+        re_scale   = np.mean(opt_points[:,3])
+        opt_point_scale = np.array([mach_scale,cl_scale,tc_scale,re_scale])
+    else:
+        raise ValueError('Analysis type not supported')
     
     opt_points_scaled = opt_points/opt_point_scale
     
@@ -22,7 +27,7 @@ def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',
     
     return drag_surrogate, opt_point_scale
 
-def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds):
+def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds,analysis_type='Euler'):
                      
     low_bounds = bounds[0]
     up_bounds  = bounds[1]
@@ -30,9 +35,8 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     opt_points   = np.load(opt_file)                
                 
     mach_scale = np.mean(opt_points[:,0])
-    re_scale   = np.mean(opt_points[:,1])
-    cl_scale   = np.mean(opt_points[:,2])
-    tc_scale   = np.mean(opt_points[:,3])                 
+    cl_scale   = np.mean(opt_points[:,1])
+    tc_scale   = np.mean(opt_points[:,2])                 
                      
     lb = dict() # lower bounds
     ub = dict() # upper bounds
@@ -42,34 +46,37 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     rg  = dict() # range of values
     
     lb['mach'] = low_bounds[0]
-    lb['re']   = low_bounds[1]
-    lb['cl']   = low_bounds[2]
-    lb['tc']   = low_bounds[3]
+    lb['cl']   = low_bounds[1]
+    lb['tc']   = low_bounds[2]
     
     ub['mach'] = up_bounds[0]
-    ub['re']   = up_bounds[1]
-    ub['cl']   = up_bounds[2]
-    ub['tc']   = up_bounds[3]
+    ub['cl']   = up_bounds[1]
+    ub['tc']   = up_bounds[2]
     
     rg['mach'] = ub['mach']-lb['mach']
-    rg['re']   = ub['re']-lb['re']
     rg['cl']   = ub['cl']-lb['cl']
     rg['tc']   = ub['tc']-lb['tc']
     
     sc['mach'] = mach_scale
-    sc['re']   = re_scale
     sc['cl']   = cl_scale
     sc['tc']   = tc_scale
     
     pos['mach'] = 0
-    pos['re']   = 1
-    pos['cl']   = 2
-    pos['tc']   = 3
+    pos['cl']   = 1
+    pos['tc']   = 2
     
     label['mach'] = 'Mach Number'
-    label['re']   = 'Reynolds Number'
     label['cl']   = 'Section Lift Coefficient'
     label['tc']   = 'Thickness to Chord'
+    
+    if analysis_type == 'RANS':
+        re_scale    = np.mean(opt_points[:,3])                            
+        lb['re']    = low_bounds[3]
+        ub['re']    = up_bounds[3]
+        rg['re']    = ub['re']-lb['re']
+        sc['re']    = re_scale
+        pos['re']   = 3
+        label['re'] = 'Reynolds Number'      
     
     other_vals_scaled = dict()
     for key, val in other_vals.iteritems():
@@ -104,7 +111,12 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     
     for jj in range(len(xs)):
         for ii in range(len(ys)):
-            prediction_point = np.array([[1.,1.,1.,1.]]) # this gives the average value for each since points were scaled
+            if analysis_type == 'Euler':
+                prediction_point = np.array([[1.,1.,1.]]) # this gives the average value for each since points were scaled
+            elif analysis_type == 'RANS':
+                prediction_point = np.array([[1.,1.,1.,1.]]) # this gives the average value for each since points were scaled
+            else:
+                raise ValueError('Analysis type not supported')
             prediction_point[0,pos[x_axis]] = xs_mesh_scaled[ii,jj]
             prediction_point[0,pos[y_axis]] = ys_mesh_scaled[ii,jj]
             for key in other_pos:
@@ -128,14 +140,15 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     plt.show()
 
 if __name__ == '__main__':
-    opt_file = 'opt_point.npy'
+    analysis_type = 'RANS'
+    opt_file = 'opt_point_new.npy'
     drag_file = 'drag_results.npy'
-    low_bounds     = np.array([.7,1e7,.05,.03])
-    up_bounds      = np.array([.9,3e7,1.,.16]) 
+    low_bounds     = np.array([.7,.05,.03,1e7])
+    up_bounds      = np.array([.9,1.,.16,3e7]) 
     bounds = (low_bounds,up_bounds)
-    drag_surrogate, opt_point_scale = create_drag_surrogate(opt_file=opt_file,drag_file=drag_file,bounds=None)
+    drag_surrogate, opt_point_scale = create_drag_surrogate(opt_file=opt_file,drag_file=drag_file,bounds=None,analysis_type=analysis_type)
     
-    test_point = np.array([[8.e-01, 1.4e+07, 2.e-01, 1.e-01]])
+    test_point = np.array([[8.e-01, 2.e-01, 1.e-01, 1.4e+07]])
     scaled_test_point = test_point/opt_point_scale 
     drag_est = drag_surrogate.predict(scaled_test_point)
     print drag_est    
@@ -151,4 +164,4 @@ if __name__ == '__main__':
     mask_bound = .08 # .1 is up to 10% away from mean, scales with bound^2 
                         # since there are two values that are checked
                         
-    plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds)
+    plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)
