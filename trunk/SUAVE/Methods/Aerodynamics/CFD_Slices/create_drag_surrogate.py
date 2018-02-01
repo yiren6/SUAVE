@@ -124,6 +124,8 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
             drag_carpet[ii,jj] = drag_surrogate.predict(prediction_point)
             
     fig = plt.figure(label[y_axis] + ' v. ' + label[x_axis]) 
+    min_bound = np.max([np.min(drag_carpet),0.])
+    #levals = np.linspace(min_bound,np.max(drag_carpet),41)
     levals = np.linspace(np.min(drag_carpet),np.max(drag_carpet),41)
     plt_handle = plt.contourf(xs_mesh,ys_mesh,drag_carpet,levels=levals)
     #plt.clabel(plt_handle, inline=1, fontsize=10)
@@ -140,28 +142,56 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     plt.show()
 
 if __name__ == '__main__':
-    analysis_type = 'RANS'
-    opt_file = 'opt_point_new.npy'
-    drag_file = 'drag_results.npy'
-    low_bounds     = np.array([.7,.05,.03,1e7])
-    up_bounds      = np.array([.9,1.,.16,3e7]) 
-    bounds = (low_bounds,up_bounds)
-    drag_surrogate, opt_point_scale = create_drag_surrogate(opt_file=opt_file,drag_file=drag_file,bounds=None,analysis_type=analysis_type)
-    
-    test_point = np.array([[8.e-01, 2.e-01, 1.e-01, 1.4e+07]])
-    scaled_test_point = test_point/opt_point_scale 
-    drag_est = drag_surrogate.predict(scaled_test_point)
-    print drag_est    
-    
-    # Bounds Sweep Generalized
-    # mach, re, cl, tc
-    other_vals = dict()
-    x_axis = 'mach'
-    y_axis = 're'
-    other_vals['tc'] = .1
-    other_vals['cl'] = .3
-    num_points = 20
-    mask_bound = .08 # .1 is up to 10% away from mean, scales with bound^2 
-                        # since there are two values that are checked
-                        
-    plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)
+    analysis_type = 'Euler'
+    if analysis_type == 'RANS':
+        
+        opt_file = 'opt_point_new.npy'
+        drag_file = 'drag_results.npy'
+        low_bounds     = np.array([.7,.05,.03,1e7])
+        up_bounds      = np.array([.9,1.,.16,3e7]) 
+        bounds = (low_bounds,up_bounds)
+        drag_surrogate, opt_point_scale = create_drag_surrogate(opt_file=opt_file,drag_file=drag_file,bounds=None,analysis_type=analysis_type)
+        
+        test_point = np.array([[8.e-01, 2.e-01, 1.e-01, 1.4e+07]])
+        scaled_test_point = test_point/opt_point_scale 
+        drag_est = drag_surrogate.predict(scaled_test_point)
+        print drag_est    
+        
+        # Bounds Sweep Generalized
+        # mach, re, cl, tc
+        other_vals = dict()
+        x_axis = 'mach'
+        y_axis = 're'
+        other_vals['tc'] = .1
+        other_vals['cl'] = .3
+        num_points = 20  # number of mesh points to plot
+        mask_bound = .08 # .1 is up to 10% away from mean, scales with bound^2 
+                            # since there are two values that are checked
+                            
+        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)
+        
+    else:
+        
+        opt_file = 'full_opt_point.npy'
+        drag_file = 'full_drag_res.npy'
+        low_bounds     = np.array([.4,-.1,.03])
+        up_bounds      = np.array([.9,1.,.16]) 
+        bounds = (low_bounds,up_bounds)
+        drag_surrogate, opt_point_scale = create_drag_surrogate(opt_file=opt_file,drag_file=drag_file,bounds=None,analysis_type=analysis_type)
+        
+        test_point = np.array([[8.e-01, 2.e-01, 1.e-01]])
+        scaled_test_point = test_point/opt_point_scale 
+        drag_est = drag_surrogate.predict(scaled_test_point)
+        print drag_est    
+        
+        # Bounds Sweep Generalized
+        # mach, re, cl, tc
+        other_vals = dict()
+        x_axis = 'mach'
+        y_axis = 'tc'
+        other_vals['cl'] = 0.6
+        num_points = 20
+        mask_bound = .05 # .1 is up to 10% away from mean, scales with bound^2 
+                            # since there are two values that are checked
+                            
+        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)        

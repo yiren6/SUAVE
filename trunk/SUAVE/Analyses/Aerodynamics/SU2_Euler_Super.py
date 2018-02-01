@@ -100,7 +100,7 @@ class SU2_Euler_Super(Markup):
         compute.drag.miscellaneous                 = Methods.Drag.miscellaneous_drag_aircraft
         compute.drag.untrimmed                     = Common.Drag.untrimmed
         compute.drag.trim                          = Common.Drag.trim
-        compute.drag.spoiler                       = FZ_Methods.Drag.spoiler_drag
+        compute.drag.spoiler                       = Common.Drag.spoiler_drag
         compute.drag.total                         = Common.Drag.total_aircraft
         
         
