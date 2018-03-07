@@ -27,7 +27,7 @@ def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',
     
     return drag_surrogate, opt_point_scale
 
-def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds,analysis_type='Euler'):
+def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds,drag_surrogate,analysis_type='Euler'):
                      
     low_bounds = bounds[0]
     up_bounds  = bounds[1]
@@ -127,12 +127,13 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     min_bound = np.max([np.min(drag_carpet),0.])
     #levals = np.linspace(min_bound,np.max(drag_carpet),41)
     levals = np.linspace(np.min(drag_carpet),np.max(drag_carpet),41)
-    plt_handle = plt.contourf(xs_mesh,ys_mesh,drag_carpet,levels=levals)
+    plt_handle = plt.contourf(xs_mesh,ys_mesh,drag_carpet,levels=levals,cmap=plt.get_cmap('jet'))
     #plt.clabel(plt_handle, inline=1, fontsize=10)
     cbar = plt.colorbar()
     x_scatter = x_opt_points[final_mask]
     y_scatter = y_opt_points[final_mask]
-    plt.scatter(x_scatter,y_scatter,s=3.,c='tomato')
+    #plt.scatter(x_scatter,y_scatter,s=3.,c='tomato')
+    plt.scatter(x_scatter,y_scatter,s=3.,c='black')
     plt.xlabel(label[x_axis])
     plt.ylabel(label[y_axis])
     plt.xlim([lb[x_axis],ub[x_axis]])
@@ -168,7 +169,7 @@ if __name__ == '__main__':
         mask_bound = .08 # .1 is up to 10% away from mean, scales with bound^2 
                             # since there are two values that are checked
                             
-        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)
+        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,drag_surrogate,analysis_type=analysis_type)
         
     else:
         
@@ -194,4 +195,4 @@ if __name__ == '__main__':
         mask_bound = .05 # .1 is up to 10% away from mean, scales with bound^2 
                             # since there are two values that are checked
                             
-        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,analysis_type=analysis_type)        
+        plot_surrogate(x_axis, y_axis, other_vals, num_points, mask_bound, opt_file, bounds,drag_surrogate,analysis_type=analysis_type)        
