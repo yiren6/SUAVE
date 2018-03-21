@@ -27,7 +27,7 @@ def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',
     
     return drag_surrogate, opt_point_scale
 
-def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds,analysis_type='Euler'):
+def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bounds,drag_surrogate,analysis_type='Euler'):
                      
     low_bounds = bounds[0]
     up_bounds  = bounds[1]
