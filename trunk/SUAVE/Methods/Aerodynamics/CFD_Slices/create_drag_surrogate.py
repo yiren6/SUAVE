@@ -10,6 +10,8 @@ def create_drag_surrogate(opt_file='opt_point.npy',drag_file='drag_results.npy',
     
     mach_scale = np.mean(opt_points[:,0])
     cl_scale   = np.mean(opt_points[:,1])
+    if np.isclose(cl_scale,0.0):
+        cl_scale = 1.
     tc_scale   = np.mean(opt_points[:,2])
     
     if analysis_type == 'Euler':
@@ -36,6 +38,8 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
                 
     mach_scale = np.mean(opt_points[:,0])
     cl_scale   = np.mean(opt_points[:,1])
+    if np.isclose(cl_scale,0.0):
+        cl_scale = 1.    
     tc_scale   = np.mean(opt_points[:,2])                 
                      
     lb = dict() # lower bounds
