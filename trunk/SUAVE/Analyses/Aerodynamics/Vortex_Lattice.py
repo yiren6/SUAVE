@@ -321,10 +321,12 @@ def calculate_lift_vortex_lattice(conditions,settings,geometry):
     # iterate over wings
     total_lift_coeff = 0.0
     wing_lifts = Data()
+
     for wing in geometry.wings.values():
 
         [wing_lift_coeff,wing_drag_coeff] = weissinger_vortex_lattice(conditions,settings,wing)
         total_lift_coeff += wing_lift_coeff * wing.areas.reference / vehicle_reference_area
         wing_lifts[wing.tag] = wing_lift_coeff
+
 
     return total_lift_coeff, wing_lifts
