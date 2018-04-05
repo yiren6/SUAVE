@@ -131,13 +131,13 @@ def plot_surrogate(x_axis,y_axis,other_vals,num_points,mask_bound,opt_file,bound
     min_bound = np.max([np.min(drag_carpet),0.])
     #levals = np.linspace(min_bound,np.max(drag_carpet),41)
     levals = np.linspace(np.min(drag_carpet),np.max(drag_carpet),41)
-    plt_handle = plt.contourf(xs_mesh,ys_mesh,drag_carpet,levels=levals,cmap=plt.get_cmap('jet'))
+    plt_handle = plt.contourf(xs_mesh,ys_mesh,drag_carpet,levels=levals,cmap=plt.get_cmap('rainbow'))
     #plt.clabel(plt_handle, inline=1, fontsize=10)
     cbar = plt.colorbar()
     x_scatter = x_opt_points[final_mask]
     y_scatter = y_opt_points[final_mask]
     #plt.scatter(x_scatter,y_scatter,s=3.,c='tomato')
-    plt.scatter(x_scatter,y_scatter,s=3.,c='black')
+    plt.scatter(x_scatter,y_scatter,s=3.,c='tomato')
     plt.xlabel(label[x_axis])
     plt.ylabel(label[y_axis])
     plt.xlim([lb[x_axis],ub[x_axis]])
