@@ -117,8 +117,8 @@ class CFD_Slices(Markup):
         compute.drag.induced                       = Common.Drag.induced_drag_aircraft
         compute.drag.compressibility               = Process()
         compute.drag.compressibility.wings         = Process_Geometry('wings')
-        compute.drag.compressibility.wings.wing    = Methods.compressibility_drag_wing
-        #compute.drag.compressibility.wings.wing    = Common.Drag.compressibility_drag_wing
+        #compute.drag.compressibility.wings.wing    = Methods.compressibility_drag_wing
+        compute.drag.compressibility.wings.wing    = Common.Drag.compressibility_drag_wing
         compute.drag.compressibility.total         = Common.Drag.compressibility_drag_wing_total
         compute.drag.miscellaneous                 = Common.Drag.miscellaneous_drag_aircraft_ESDU
         compute.drag.untrimmed                     = Common.Drag.untrimmed
