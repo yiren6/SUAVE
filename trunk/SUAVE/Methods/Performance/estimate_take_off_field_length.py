@@ -175,6 +175,7 @@ def estimate_take_off_field_length(vehicle,analyses,airport,compute_2nd_seg_clim
             print 'Incorrect number of engines: {0:.1f}. Using twin engine correlation.'.format(engine_number)
 
     # Define takeoff index   (V2^2 / (T/W)
+    print V2_speed
     takeoff_index = V2_speed**2. / (thrust[0][0] / weight)
     # Calculating takeoff field length
     takeoff_field_length = 0.

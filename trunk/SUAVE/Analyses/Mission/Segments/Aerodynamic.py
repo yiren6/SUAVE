@@ -23,68 +23,68 @@ from SUAVE.Analyses import Process
 ## @ingroup Analyses-Mission-Segments
 class Aerodynamic(Simple):
     """ Thethird basic piece of a mission which each segment will expand upon
-    
+
         Assumptions:
         There's a detailed process flow outline in defaults. A mission must be solved in that order.
         Assumes you're an atmospheric vehicle.
-        
+
         Source:
         None
     """     
-    
+
     def __defaults__(self):
         """This sets the default values.
-    
+
             Assumptions:
             None
-    
+
             Source:
             N/A
-    
+
             Inputs:
             None
-    
+
             Outputs:
             None
-    
+
             Properties Used:
             None
         """          
-        
+
         # --------------------------------------------------------------
         #   User inputs
         # --------------------------------------------------------------
         # self.example = 1.0
-        
-        
+
+
         # --------------------------------------------------------------
         #   State
         # --------------------------------------------------------------
-        
+
         # conditions
         self.state.conditions.update( Conditions.Aerodynamics() )
         self.temperature_deviation = 0.0
-        
+
         # --------------------------------------------------------------
         #   The Solving Process
         # --------------------------------------------------------------
-        
+
         # --------------------------------------------------------------
         #   Initialize - before iteration
         # --------------------------------------------------------------
         initialize = self.process.initialize
-        
+
         initialize.expand_state            = Methods.expand_state
         initialize.differentials           = Methods.Common.Numerics.initialize_differentials_dimensionless
         initialize.conditions              = None        
-        
+
         # --------------------------------------------------------------
         #   Converge - starts iteration
         # --------------------------------------------------------------
         converge = self.process.converge
-        
+
         converge.converge_root             = Methods.converge_root        
-        
+
         # --------------------------------------------------------------
         #   Iterate - this is iterated
         # --------------------------------------------------------------
@@ -96,11 +96,11 @@ class Aerodynamic(Simple):
         iterate.initials.weights           = Methods.Common.Weights.initialize_weights
         iterate.initials.inertial_position = Methods.Common.Frames.initialize_inertial_position
         iterate.initials.planet_position   = Methods.Common.Frames.initialize_planet_position
-        
+
         # Unpack Unknowns
         iterate.unknowns = Process()
         iterate.unknowns.mission           = None  
-        
+
         # Update Conditions
         iterate.conditions = Process()
         iterate.conditions.differentials   = Methods.Common.Numerics.update_differentials_time        
@@ -123,11 +123,11 @@ class Aerodynamic(Simple):
         #   Finalize - after iteration
         # --------------------------------------------------------------
         finalize = self.process.finalize
-        
+
         # Post Processing
         finalize.post_process = Process()        
         finalize.post_process.inertial_position = Methods.Common.Frames.integrate_inertial_horizontal_position
         finalize.post_process.stability         = Methods.Common.Aerodynamics.update_stability
-        
+
         return
 

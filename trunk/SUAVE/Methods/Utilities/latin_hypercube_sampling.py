@@ -115,7 +115,7 @@ if __name__ == '__main__':
     fig = plt.figure("3D Test Case",figsize=(8,6))
     axes = plt.gca(projection='3d')    
     
-    lhd = latin_hypercube_sampling(3,num_3d_samples,'center')
+    lhd = latin_hypercube_sampling(3,num_3d_samples,criterion='center')
     
     x = lhd[:,0]
     y = lhd[:,1]
