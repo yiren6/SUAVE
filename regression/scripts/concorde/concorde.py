@@ -67,6 +67,9 @@ def main():
     old_results = load_results()   
 
     # plt the old results
+
+    print results.segments[0].conditions.weights.total_mass[0] - results.segments[-1].conditions.weights.total_mass[-1]    
+    
     plot_mission(results)
     plot_mission(old_results,'k-')
     plt.show()
@@ -583,7 +586,7 @@ def mission_setup(analyses):
         # ------------------------------------------------------------------    
         
         segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_1"
+        segment.tag = "climb_3"
         
         segment.analyses.extend( analyses.climb )
         
@@ -599,7 +602,7 @@ def mission_setup(analyses):
         # ------------------------------------------------------------------    
         
         segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_2"
+        segment.tag = "climb_4"
         
         segment.analyses.extend( analyses.cruise )
         
@@ -615,7 +618,7 @@ def mission_setup(analyses):
         # ------------------------------------------------------------------    
         
         segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_3"
+        segment.tag = "climb_41"
         
         segment.analyses.extend( analyses.cruise )
         
@@ -636,8 +639,8 @@ def mission_setup(analyses):
         segment.analyses.extend( analyses.cruise )
         
         segment.acceleration      = 1.  * Units['m/s/s']
-        self.air_speed_start   = 0.0 * Units['m/s']
-        self.air_speed_end     = 1.0 * Units['m/s']
+        segment.air_speed_start   = 0.0 * Units['m/s']
+        segment.air_speed_end     = 1.0 * Units['m/s']
         
         # add to mission
         mission.append_segment(segment)      
