@@ -46,6 +46,7 @@ def induced_drag_aircraft(state,settings,geometry):
     configuration = settings    
     
     aircraft_lift = conditions.aerodynamics.lift_coefficient
+    mach          = conditions.freestream.mach_number
     
     e             = configuration.oswald_efficiency_factor
     K             = configuration.viscous_lift_dependent_drag_factor
@@ -56,7 +57,9 @@ def induced_drag_aircraft(state,settings,geometry):
     if e == None:
         e = 1/((1/wing_e)+np.pi*ar*K*CDp)    
     
-    total_induced_drag = aircraft_lift**2 / (np.pi*ar*e)
+    total_induced_drag = np.zeros_like(mach)
+    total_induced_drag[mach<.95] = aircraft_lift[mach<.95]**2 / (np.pi*ar*e[mach<.95])
+    total_induced_drag[mach>=.95] = aircraft_lift[mach>=.95]**2 / (np.pi*ar*wing_e) # oswald factor is calculated separately in supersonic conditions
         
     # store data
     try:
