@@ -8,3 +8,4 @@ import ipopt_setup
 import pyopt_surrogate_setup
 import TRMM
 import additive_setup
+import pyomo_setup
