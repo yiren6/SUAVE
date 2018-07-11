@@ -121,12 +121,12 @@ class Pyomo_Problem(RealOptProblem):
         bnd = inp[:,2] # Bounds
         scl = inp[:,3] # Scale
         
-        # Scaled initials
+        #Scaled initials
         x0 = ini/scl
         x0 = x0.astype(float)
         
     
-        # Bounds for inputs and constraints
+        # Bounds for inputs and constraintss
         flbd = np.zeros_like(ini)
         fubd = np.zeros_like(ini)
         
@@ -141,14 +141,17 @@ class Pyomo_Problem(RealOptProblem):
         for ii in xrange(0,nvar):
             flbd[ii]      = (bnd[ii][0]/scl[ii])
             fubd[ii]      = (bnd[ii][1]/scl[ii])
-            model.x[ii+1] = ini[ii] #assign values
+            model.x[ii+1] = x0[ii] #assign values
             #model.x[ii+1] = pyo.Var( bounds=(flbd[ii], fubd[ii]), initialize=ini[ii])
-  
+        print 'x here = ', model.x
+        print 'dir(x) = ', dir(model.x)
+        print 'x[values] = ', model.x.get_values().values()
         #model.lower   = flbd
         #model.upper   = fubd
         self.lower     = flbd
         self.higher    = fubd
-        
+        print 'self.lower = ', self.lower
+        print 'self.higher = ', self.higher
         #model.x          = pyo.Var(pyo.RangeSet(model.nvars), within=pyo.Reals, initialize = ini)
         model.constraint = pyo.Constraint(pyo.RangeSet(model.ncon), rule = self.constraint_rule)
         model.problem    = problem  #assign problem to model
@@ -164,23 +167,25 @@ class Pyomo_Problem(RealOptProblem):
         #self.nvars=4
     
     def function_value(self, x):
+        x_here = x.get_values().values()
         problem = self.problem
-        out     = problem.objective(x)  
+        out     = problem.objective(x_here)  
         self.obj_val = out
         return  out
             
         
     def gradient(self, x):
+        x_here = x.get_values().values()
         problem       = self.problem
-        if np.isclose(x, self.x_grad):
+        if np.isclose(x_here, self.x_grad):
             #already computed this point
             grad_f = self.grad_f
             jac_g  = self.jac_g
         else:
             if 'difference_interval' in problem : #check for key
-                grad_f, jac_g  = problem.finite_difference(x, problem.difference_interval)
+                grad_f, jac_g  = problem.finite_difference(x_here, problem.difference_interval)
             else:
-                grad_f, jac_g  = problem.finite_difference(x) #use default value
+                grad_f, jac_g  = problem.finite_difference(x_here) #use default value
             self.grad_f    = grad_f
             self.jac_g     = jac_g
             self.x_grad    = x 
@@ -193,7 +198,9 @@ class Pyomo_Problem(RealOptProblem):
         return jac_g
         
     def  nonlinear_constraint_values(self,x):
-        con = problem.all_constraints(x)
+        x_here = x.get_values().values()
+        print 'x_here'
+        con = problem.all_constraints(x_here)
         return con
 
 
@@ -201,9 +208,10 @@ class Pyomo_Problem(RealOptProblem):
         #j is index for a constraint number
         #problem = model.problem
         problem = self.problem
-        x       = model.x
+        x       = model.x.get_values().values()    
         con     = problem.optimization_problem.constraints #problem constraint
-        con_val = problem.all_constraints(model.x)
+        con_val = problem.all_constraints(x)
+  
         edge    = con[j][2] 
         symb    = con[j][1]
         if symb == '=':
