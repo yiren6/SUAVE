@@ -30,9 +30,9 @@ def vehicle_setup(source_ratio=1.):
     # ------------------------------------------------------------------    
 
     # mass properties
-    vehicle.mass_properties.max_takeoff               = 185000.   # kg
+    vehicle.mass_properties.max_takeoff               = 135000.   # kg
     vehicle.mass_properties.operating_empty           = 78700.   # kg
-    vehicle.mass_properties.takeoff                   = 185000.   # kg
+    vehicle.mass_properties.takeoff                   = 135000.   # kg
     vehicle.mass_properties.cargo                     = 1000.  * Units.kilogram   
         
     # envelope properties
@@ -57,7 +57,7 @@ def vehicle_setup(source_ratio=1.):
     wing.sweeps.quarter_chord    = 59.5 * Units.deg
     wing.thickness_to_chord      = 0.03
     wing.taper                   = 0.
-    wing.span_efficiency         = .8
+    wing.span_efficiency         = 1.
     
     wing.spans.projected         = 25.6    
     

@@ -90,8 +90,9 @@ def noise_airframe_Fink(config, analyses, noise_segment,ioprint = 0, filename=0)
 
     Sw      =       wing.main_wing.areas.reference  / (Units.ft)**2              #wing area, sq.ft
     bw      =       wing.main_wing.spans.projected / Units.ft                    #wing span, ft
-    Sht     =       wing.horizontal_stabilizer.areas.reference / (Units.ft)**2   #horizontal tail area, sq.ft
-    bht     =       wing.horizontal_stabilizer.spans.projected / Units.ft        #horizontal tail span, ft
+    if wing.has_key('horizontal_stabilizer'):
+        Sht     =       wing.horizontal_stabilizer.areas.reference / (Units.ft)**2   #horizontal tail area, sq.ft
+        bht     =       wing.horizontal_stabilizer.spans.projected / Units.ft        #horizontal tail span, ft
     Svt     =       wing.vertical_stabilizer.areas.reference / (Units.ft)**2     #vertical tail area, sq.ft
     bvt     =       wing.vertical_stabilizer.spans.projected  / Units.ft         #vertical tail span, ft
     deltaf  =       wing.main_wing.flaps.angle                                   #flap delection, rad
@@ -200,7 +201,10 @@ def noise_airframe_Fink(config, analyses, noise_segment,ioprint = 0, filename=0)
 
         #Call each noise source model
         SPL_wing = noise_clean_wing(Sw,bw,0,1,deltaw[i],velocity,viscosity[i],M[i],phi[i],theta,distance,frequency) - delta_atmo    #Wing Noise
-        SPLht    = noise_clean_wing(Sht,bht,0,1,deltaw[i],velocity,viscosity[i],M[i],phi[i],theta,distance,frequency)  -delta_atmo    #Horizontal Tail Noise
+        if wing.has_key('horizontal_stabilizer'):
+            SPLht    = noise_clean_wing(Sht,bht,0,1,deltaw[i],velocity,viscosity[i],M[i],phi[i],theta,distance,frequency)  -delta_atmo    #Horizontal Tail Noise
+        else:
+            SPLht = np.zeros_like(SPL_wing)
         SPLvt    = noise_clean_wing(Svt,bvt,0,0,deltaw[i],velocity,viscosity[i],M[i],phi[i],theta,distance,frequency)  -delta_atmo    #Vertical Tail Noise
  
         SPL_slat = noise_leading_edge_slat(SPL_wing,Sw,bw,velocity,deltaw[i],viscosity[i],M[i],phi[i],theta,distance,frequency) -delta_atmo        #Slat leading edge
@@ -222,7 +226,7 @@ def noise_airframe_Fink(config, analyses, noise_segment,ioprint = 0, filename=0)
  
          #Total Airframe Noise
         SPL_total = 10.*np.log10(10.0**(0.1*SPL_wing)+10.0**(0.1*SPLht)+10**(0.1*SPL_flap)+ \
-             10.0**(0.1*SPL_slat)+10.0**(0.1*SPL_main_landing_gear)+10.0**(0.1*SPL_nose_landing_gear)) - delta_atmo
+             10.0**(0.1*SPL_slat)+10.0**(0.1*SPL_main_landing_gear)+10.0**(0.1*SPL_nose_landing_gear))
             
         SPL_total_history[i][:] = SPL_total[:]
         SPL_wing_history[i][:]  = SPL_wing[:]
@@ -303,7 +307,7 @@ def noise_airframe_Fink(config, analyses, noise_segment,ioprint = 0, filename=0)
         fid.write('\n')
         
         for id in range (0,nsteps):
-            fid.write(str('%2.2f' % time[id])+'        ')
+            fid.write(str('%2.2f' % noise_time[id])+'        ')
             fid.write(str('%2.2f' % altitude[id])+'        ')
             fid.write(str('%2.2f' % M[id])+'        ')
             fid.write(str('%2.2f' % (angle[id]*180/np.pi))+'        ')
