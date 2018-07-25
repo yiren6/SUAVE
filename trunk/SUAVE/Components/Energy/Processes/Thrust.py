@@ -180,7 +180,7 @@ class Thrust(Energy_Component):
         Isp              = Fsp*a0*(1.+bypass_ratio)/(f*g)
         
         #Computing the TSFC
-        TSFC             = 3600.*f*g/(Fsp*a0*(1+bypass_ratio))*(1.-SFC_adjustment)
+        TSFC             = 3600.*f*g/(Fsp*a0*(1+bypass_ratio))*(1.+SFC_adjustment)
        
      
         #computing the core mass flow

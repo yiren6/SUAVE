@@ -62,9 +62,14 @@ def main():
     mission = analyses.missions.base
     results = mission.evaluate()
     
+    
+    weights = analyses.configs.cruise.weights.evaluate()
+    print weights.empty / Units.lb
+    
+    
     # load older results
     #save_results(results)
-    old_results = load_results()   
+    #old_results = load_results()   
 
     # plt the old results
 
