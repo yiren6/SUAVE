@@ -14,6 +14,7 @@ from SUAVE.Core import (
 )
 from SUAVE.Methods.Propulsion.turbojet_sizing import turbojet_sizing
 from SUAVE.Methods.Propulsion.turbofan_sizing import turbofan_sizing
+from SUAVE.Input_Output.OpenVSP.vsp_write import write
 
 def vehicle_setup(source_ratio=1.):
 
@@ -98,6 +99,7 @@ def vehicle_setup(source_ratio=1.):
     segment.root_chord_percent    = 33.8/33.8
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 67. * Units.deg
+    segment.thickness_to_chord    = 0.03
     segment.vsp_mesh              = Data()
     segment.vsp_mesh.inner_radius    = 1./source_ratio
     segment.vsp_mesh.outer_radius    = 1./source_ratio
@@ -115,6 +117,7 @@ def vehicle_setup(source_ratio=1.):
     segment.root_chord_percent    = 13.8/33.8
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 48. * Units.deg
+    segment.thickness_to_chord    = 0.03
     segment.vsp_mesh              = Data()
     segment.vsp_mesh.inner_radius    = 1./source_ratio
     segment.vsp_mesh.outer_radius    = .88/source_ratio
@@ -132,6 +135,7 @@ def vehicle_setup(source_ratio=1.):
     segment.root_chord_percent    = 4.4/33.8
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 71. * Units.deg 
+    segment.thickness_to_chord    = 0.03
     segment.vsp_mesh              = Data()
     segment.vsp_mesh.inner_radius    = .88/source_ratio
     segment.vsp_mesh.outer_radius    = .22/source_ratio
@@ -195,6 +199,7 @@ def vehicle_setup(source_ratio=1.):
     segment.root_chord_percent    = 14.5/14.5
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 63. * Units.deg
+    segment.thickness_to_chord    = 0.03
     segment.vsp_mesh              = Data()
     segment.vsp_mesh.inner_radius    = 2.9/source_ratio
     segment.vsp_mesh.outer_radius    = 1.5/source_ratio
@@ -211,6 +216,7 @@ def vehicle_setup(source_ratio=1.):
     segment.root_chord_percent    = 7.5/14.5
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 40. * Units.deg
+    segment.thickness_to_chord    = 0.03
     segment.vsp_mesh              = Data()
     segment.vsp_mesh.inner_radius    = 1.5/source_ratio
     segment.vsp_mesh.outer_radius    = .54/source_ratio
@@ -485,6 +491,8 @@ def vehicle_setup(source_ratio=1.):
     # ------------------------------------------------------------------
     #   Vehicle Definition Complete
     # ------------------------------------------------------------------
+
+    write(vehicle,'test')
 
     return vehicle
 
