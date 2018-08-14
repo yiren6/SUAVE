@@ -400,8 +400,8 @@ def noise_SAE (turbofan,noise_segment,config,analyses,ioprint = 0, filename = 0)
         
         #Calculation of dBA based on the sound pressure time history
         SPLt_dBA = dbA_noise(SPL_total)
-        SPLt_dBA_history[id][:] = SPLt_dBA[:]
-        SPLt_dBA_max[id] = max(SPLt_dBA)          
+        SPLt_dBA_history[i][:] = SPLt_dBA[:]
+        SPLt_dBA_max[i] = max(SPLt_dBA)          
      
     #Calculation of the Perceived Noise Level EPNL based on the sound time history
     PNL_total               =  pnl_noise(SPL_total_history)    
@@ -449,7 +449,7 @@ def noise_SAE (turbofan,noise_segment,config,analyses,ioprint = 0, filename = 0)
         fid.write('time     	altitude     Mach     Core Velocity   Fan Velocity  Polar angle    Azim angle    distance    Primary	  Secondary 	 Mixed        Total')
         fid.write('\n')
         for id in range (0,nsteps):
-            fid.write(str('%2.2f' % noise_time[id])+'        ')
+            fid.write(str('%2.2f' % time[id])+'        ')
             fid.write(str('%2.2f' % Altitude[id])+'        ')
             fid.write(str('%2.2f' % Mach_aircraft[id])+'        ')
             fid.write(str('%3.3f' % Velocity_primary[id])+'        ')
@@ -489,7 +489,7 @@ def noise_SAE (turbofan,noise_segment,config,analyses,ioprint = 0, filename = 0)
             fid.write('Emission angle = ' + str(angles[id]*180/np.pi) + '\n')
             fid.write('Altitude = ' + str(Altitude[id]) + '\n')
             fid.write('Distance = ' + str(distance_microphone[id]) + '\n')
-            fid.write('Time = ' + str(noise_time[id]) + '\n')
+            fid.write('Time = ' + str(time[id]) + '\n')
             fid.write('f		Primary  Secondary  	Mixed  		Total' + '\n')
          
        
