@@ -1,9 +1,8 @@
-## @ingroup Methods-Missions-Segments-Single_Point
-# Set_Speed_Set_Altitude.py
+## @ingroup Methods-Missions-Segments-Cruise
+# Breguet_Range_Fixed_Range.py
 # 
-# Created:  Mar 2017, T. MacDonald
-# Modified: Jul 2017, T. MacDonald
-#           Aug 2017, E. Botero
+# Created:  Nov 2017, T. MacDonald
+# Modified: 
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -16,21 +15,20 @@ from SUAVE.Core import Units, Data
 #  Initialize Conditions
 # ----------------------------------------------------------------------
 
-## @ingroup Methods-Missions-Segments-Single_Point
+## @ingroup Methods-Missions-Segments-Cruise
 def initialize_conditions(segment,state):
     """Sets the specified conditions which are given for the segment type.
 
     Assumptions:
-    A fixed speed and altitude
+    None
 
     Source:
     N/A
 
     Inputs:
     segment.altitude                            [meters]
+    segment.range                               [meters]
     segment.air_speed                           [meters/second]
-    segment.x_accel                             [meters/second^2]
-    segment.z_accel                             [meters/second^2]
 
     Outputs:
     conditions.frames.inertial.acceleration_vector [meters/second^2]
@@ -67,23 +65,27 @@ def initialize_conditions(segment,state):
     state.conditions.frames.inertial.velocity_vector[:,0] = air_speed
     state.conditions.frames.inertial.time[:,0]            = time[:,0]
 
-## @ingroup Methods-Missions-Segments-Single_Point
+## @ingroup Methods-Missions-Segments-Cruise
 def update_weights(segment,state):
-    """Sets the gravity force vector during the segment
+    """Determines fuel burn according to the Breguet range equation
 
     Assumptions:
-    A fixed speed and altitde
+    No large variations in L/D or SFC during the segment
 
     Source:
-    N/A
+    Common Method
 
     Inputs:
     conditions:
-        weights.total_mass                          [kilogram]
-        freestream.gravity                          [meters/second^2]
+        weights.total_mass                          [kg]
+        freestream.gravity                          [m/s^2]
+        aerodynamics.lift_coefficient               [-]
+        aerodynamics.drag_coefficient               [-]
+        weights.vehicle_mass_rate                   [kg/s]
+        frames.body.thrust_force_vector             [N]
 
     Outputs:
-    conditions.frames.inertial.gravity_force_vector [newtons]
+    conditions.frames.inertial.gravity_force_vector [N]
 
 
     Properties Used:
@@ -98,9 +100,8 @@ def update_weights(segment,state):
     V          = np.mean(conditions.freestream.velocity)
     L          = np.mean(conditions.aerodynamics.lift_coefficient)
     D          = np.mean(conditions.aerodynamics.drag_coefficient)
-    mdot       = conditions.weights.vehicle_mass_rate[0,0]
-    thrust     = conditions.frames.body.thrust_force_vector[0,0]
-    #mdot       = mdot * Units.hr
+    mdot       = np.mean(conditions.weights.vehicle_mass_rate[0,0])
+    thrust     = np.mean(conditions.frames.body.thrust_force_vector[0,0])
     sfc        = mdot / thrust	    
 
     # final weight
@@ -113,91 +114,6 @@ def update_weights(segment,state):
     conditions.frames.inertial.gravity_force_vector[:,2] = np.array([Wi,Wf])
 
     return
-
-def update_aerodynamics(segment,state):
-    """ Gets aerodynamics conditions
-    
-        Assumptions:
-        +X out nose
-        +Y out starboard wing
-        +Z down
-
-        Inputs:
-            segment.analyses.aerodynamics_model                  [Function]
-            aerodynamics_model.settings.maximum_lift_coefficient [unitless]
-            aerodynamics_model.geometry.reference_area           [meter^2]
-            state.conditions.freestream.dynamic_pressure         [pascals]
-
-        Outputs:
-            conditions.aerodynamics.lift_coefficient [unitless]
-            conditions.aerodynamics.drag_coefficient [unitless]
-            conditions.frames.wind.lift_force_vector [newtons]
-            conditions.frames.wind.drag_force_vector [newtons]
-
-        Properties Used:
-        N/A
-    """
-    
-    # unpack
-    conditions         = state.conditions
-    aerodynamics_model = segment.analyses.aerodynamics
-    q                  = state.conditions.freestream.dynamic_pressure
-    Sref               = aerodynamics_model.geometry.reference_area
-    g                  = conditions.freestream.gravity
-   
-        
-    # dimensionalize
-    L = state.ones_row(3) * 0.0
-    D = state.ones_row(3) * 0.0
-    
-    LD = segment.lift_drag_ratio
-
-    L[:,2] = -conditions.weights.total_mass[:,0]*g[:,0]
-    D[:,0] = L[:,2]/LD
-    
-    CL = -np.transpose(np.atleast_2d(L[:,2]))/q/Sref
-    CD = -np.transpose(np.atleast_2d(D[:,0]))/q/Sref
-   
-
-    # pack conditions
-    conditions.aerodynamics.lift_coefficient = CL
-    conditions.aerodynamics.drag_coefficient = CD
-    conditions.frames.wind.lift_force_vector[:,:] = L[:,:] # z-axis
-    conditions.frames.wind.drag_force_vector[:,:] = D[:,:] # x-axis
-    
-def update_thrust(segment,state):
-    """ Evaluates the energy network to find the thrust force and mass rate
-
-        Inputs -
-            segment.analyses.energy_network    [Function]
-            state                              [Data]
-
-        Outputs -
-            state.conditions:
-               frames.body.thrust_force_vector [Newtons]
-               weights.vehicle_mass_rate       [kg/s]
-
-
-        Assumptions -
-
-
-    """    
-    
-    ## unpack
-    #energy_model = segment.analyses.energy
-
-    ## evaluate
-    #results   = energy_model.evaluate_thrust(state)
-    
-    thrust = -state.conditions.frames.wind.drag_force_vector[:,0]
-    
-    tsfc = segment.thrust_specific_fuel_consumption
-    mass_flow = np.transpose(np.atleast_2d(thrust*tsfc))
-
-    # pack conditions
-    conditions = state.conditions
-    conditions.frames.body.thrust_force_vector = -state.conditions.frames.wind.drag_force_vector
-    conditions.weights.vehicle_mass_rate       = mass_flow
 
 def expand_state(segment,state):
     
@@ -218,9 +134,7 @@ def expand_state(segment,state):
     Properties Used:
     N/A
     """       
-
-    n_points = 2
     
-    state.expand_rows(n_points)
+    state.expand_rows(state.numerics.number_control_points)
     
     return

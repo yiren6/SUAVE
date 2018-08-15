@@ -1,8 +1,8 @@
 ## @ingroup Analyses-Mission-Segments-Cruise
-# Constant_Speed_Constant_Altitude.py
+# Breguet_Range_Fixed_Range.py
 #
-# Created:  
-# Modified: Feb 2016, Andrew Wendorff
+# Created:  Nov 2017, T. MacDonald
+# Modified: 
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -28,14 +28,15 @@ from SUAVE.Core import Units
 
 ## @ingroup Analyses-Mission-Segments-Cruise
 class Breguet_Range_Fixed_Range(Aerodynamic):
-    """ The CLASSIC! Fixed true airspeed and altitude and a set distance.
-        Most other cruise segments are built off this segment. The most simple segment you can fly.
+    """ This function uses a given range and air speed to calculate fuel burn.
     
         Assumptions:
-        None
+        L/D and SFC values are relatively constant throughout the segment.
+        If passed a base segment with a different number of control points (other than 2),
+        the analysis will fail.
         
         Source:
-        None
+        Common method
     """         
     
     def __defaults__(self):
@@ -126,10 +127,8 @@ class Breguet_Range_Fixed_Range(Aerodynamic):
         iterate.conditions.freestream      = Methods.Common.Aerodynamics.update_freestream
         iterate.conditions.orientations    = Methods.Common.Frames.update_orientations
         iterate.conditions.aerodynamics    = Methods.Common.Aerodynamics.update_aerodynamics
-        #iterate.conditions.aerodynamics    = Methods.Cruise.Breguet_Range_Fixed_Range.update_aerodynamics
         iterate.conditions.stability       = Methods.Common.Aerodynamics.update_stability
         iterate.conditions.propulsion      = Methods.Common.Energy.update_thrust
-        #iterate.conditions.propulsion      = Methods.Cruise.Breguet_Range_Fixed_Range.update_thrust
         iterate.conditions.weights         = Methods.Cruise.Breguet_Range_Fixed_Range.update_weights
         iterate.conditions.forces          = Methods.Common.Frames.update_forces
         iterate.conditions.planet_position = skip
