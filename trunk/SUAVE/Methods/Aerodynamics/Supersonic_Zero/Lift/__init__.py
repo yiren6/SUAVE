@@ -4,3 +4,4 @@
 
 from vortex_lift import vortex_lift
 from wing_compressibility import wing_compressibility
+from compute_max_lift_coeff_delta import compute_max_lift_coeff_delta

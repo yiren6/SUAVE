@@ -40,6 +40,8 @@ def wing_fuel_volume(wing):
 
     # Pack
     wing.fuel_volume = volume
+    
+    return volume
 
 # ----------------------------------------------------------------------
 #   Module Tests

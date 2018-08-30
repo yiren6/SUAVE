@@ -9,4 +9,6 @@ from write_optimization_outputs import write_optimization_outputs
 from carpet_plot import carpet_plot
 from line_plot import line_plot
 from Surrogate_Optimization import Surrogate_Optimization
+from carpet_optimization import carpet_optimization
+from line_optimization import line_optimization
 

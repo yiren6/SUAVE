@@ -92,7 +92,7 @@ def estimate_2ndseg_lift_drag_ratio(config):
         conditions.freestream.velocity          = 90. * Units.knots
         try:
             maximum_lift_coefficient, induced_drag_high_lift = compute_max_lift_coeff(config,conditions)
-            config.maximum_lift_coefficient = maximum_lift_coefficient
+            #config.maximum_lift_coefficient = maximum_lift_coefficient
         except:
             raise ValueError, "Maximum lift coefficient calculation error. Please, check inputs"
 
