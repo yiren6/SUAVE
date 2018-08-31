@@ -33,7 +33,7 @@ def vehicle_setup(source_ratio=1.):
     # mass properties
     vehicle.mass_properties.max_takeoff               = 185000.   # kg
     vehicle.mass_properties.operating_empty           = 78700.   # kg
-    vehicle.mass_properties.takeoff                   = 185000.   # kg
+    vehicle.mass_properties.takeoff                   = 183000.   # kg, adjusted due to significant fuel burn on runway
     vehicle.mass_properties.cargo                     = 1000.  * Units.kilogram   
         
     # envelope properties
@@ -56,6 +56,7 @@ def vehicle_setup(source_ratio=1.):
     
     wing.aspect_ratio            = 1.83
     wing.sweeps.quarter_chord    = 59.5 * Units.deg
+    wing.sweeps.leading_edge     = 66.5 * Units.deg
     wing.thickness_to_chord      = 0.03
     wing.taper                   = 0.
     wing.span_efficiency         = 1.
@@ -187,7 +188,7 @@ def vehicle_setup(source_ratio=1.):
     wing.dynamic_pressure_ratio  = 1.0
     
     tail_airfoil = SUAVE.Components.Wings.Airfoils.Airfoil()
-    tail_airfoil.coordinate_file = 'supertail_refined.dat' 
+    tail_airfoil.coordinate_file = 'supersonic_tail.dat' 
     
     wing.append_airfoil(tail_airfoil)  
 
@@ -260,6 +261,25 @@ def vehicle_setup(source_ratio=1.):
     fuselage.effective_diameter    = 3.1
     
     fuselage.differential_pressure = 7.4e4 * Units.pascal    # Maximum differential pressure
+    
+    fuselage.OpenVSP_values = Data() # VSP uses degrees directly
+    
+    fuselage.OpenVSP_values.nose = Data()
+    fuselage.OpenVSP_values.nose.top = Data()
+    fuselage.OpenVSP_values.nose.side = Data()
+    fuselage.OpenVSP_values.nose.top.angle = 20.0
+    fuselage.OpenVSP_values.nose.top.strength = 0.75
+    fuselage.OpenVSP_values.nose.side.angle = 20.0
+    fuselage.OpenVSP_values.nose.side.strength = 0.75  
+    fuselage.OpenVSP_values.nose.TB_Sym = True
+    fuselage.OpenVSP_values.nose.z_pos = -.01
+    
+    fuselage.OpenVSP_values.tail = Data()
+    fuselage.OpenVSP_values.tail.top = Data()
+    fuselage.OpenVSP_values.tail.side = Data()    
+    fuselage.OpenVSP_values.tail.bottom = Data()
+    fuselage.OpenVSP_values.tail.top.angle = 0.0
+    fuselage.OpenVSP_values.tail.top.strength = 0.0    
     
     # add to vehicle
     vehicle.append_component(fuselage)
@@ -425,20 +445,6 @@ def vehicle_setup(source_ratio=1.):
     # add to network
     turbojet.append(nozzle)
     
-    # ------------------------------------------------------------------
-    #  Component 9 - Fan Nozzle
-    
-    # instantiate
-    nozzle = SUAVE.Components.Energy.Converters.Expansion_Nozzle()   
-    nozzle.tag = 'fan_nozzle'
-
-    # setup
-    nozzle.polytropic_efficiency = 0.95
-    nozzle.pressure_ratio        = 1.    
-    
-    # add to network
-    turbojet.append(nozzle)
-    
     
     # ------------------------------------------------------------------
     #Component 10 : thrust (to compute the thrust)
@@ -455,7 +461,7 @@ def vehicle_setup(source_ratio=1.):
     #isa_deviation = 0.
     
     #total design thrust (includes all the engines)
-    thrust.total_design             = 44000. * Units.lbf
+    thrust.total_design             = 40000. * Units.lbf
  
     # Note: Sizing builds the propulsor. It does not actually set the size of the turbojet
     #design sizing conditions

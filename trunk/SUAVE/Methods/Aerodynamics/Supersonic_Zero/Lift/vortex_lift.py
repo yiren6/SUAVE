@@ -23,7 +23,7 @@ def vortex_lift(state,settings,geometry):
     wing capable of vortex lift
 
     Source:
-    http://adg.stanford.edu/aa241/highlift/sstclmax.html
+    http://aerodesign.stanford.edu/aircraftdesign/highlift/sstclmax.html
     
     Inputs:
     states.conditions.
@@ -31,7 +31,7 @@ def vortex_lift(state,settings,geometry):
       aerodynamics.angle_of_attack        [radians]
       aerodynamics.lift_coefficient       [-]
     geometry.wings.*.aspect_ratio         [Unitless]
-    geometry.wings.*.sweeps.quarter_chord [radians]
+    geometry.wings.*.sweeps.leading_edge  [radians]
 
     Outputs:
     state.conditions.aerodynamics.
@@ -54,7 +54,7 @@ def vortex_lift(state,settings,geometry):
 
         if wing.vortex_lift is True:
             AR = wing.aspect_ratio
-            GAMMA = wing.sweeps.quarter_chord
+            GAMMA = wing.sweeps.leading_edge
             
             
             # angle of attack
