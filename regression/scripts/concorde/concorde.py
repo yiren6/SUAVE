@@ -542,9 +542,9 @@ def mission_setup(analyses):
     
     segment.analyses.extend( analyses.cruise )
     
-    segment.altitude_end = 10000. * Units.ft
+    segment.altitude_end = 8000. * Units.ft
     segment.airpseed     = 250.  * Units.kts
-    segment.climb_rate   = 2500. * Units['ft/min']
+    segment.climb_rate   = 2000. * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)
@@ -559,9 +559,9 @@ def mission_setup(analyses):
     segment.analyses.extend( analyses.cruise )
     
     segment.altitude_end = 33000. * Units.ft
-    segment.mach_start   = .6
+    segment.mach_start   = .45
     segment.mach_end     = 0.95
-    segment.climb_rate   = 2500. * Units['ft/min']
+    segment.climb_rate   = 3000. * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)    
@@ -595,7 +595,7 @@ def mission_setup(analyses):
     segment.altitude_end = 40000. * Units.ft
     segment.mach_start   = 1.0
     segment.mach_end     = 1.7
-    segment.climb_rate   = 2000.  * Units['ft/min']
+    segment.climb_rate   = 1750.  * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)
@@ -612,7 +612,7 @@ def mission_setup(analyses):
     segment.altitude_end = 50000. * Units.ft
     segment.mach_start   = 1.7
     segment.mach_end     = 2.02
-    segment.climb_rate   = 2000.  * Units['ft/min']
+    segment.climb_rate   = 750.  * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)     
@@ -631,7 +631,7 @@ def mission_setup(analyses):
     
     segment.altitude_end = 60000. * Units.ft
     segment.mach_number  = 2.02
-    segment.climb_rate   = 0.65  * Units['m/s']
+    segment.climb_rate   = 50.  * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)
@@ -647,7 +647,7 @@ def mission_setup(analyses):
     
     segment.altitude   = 60000. * Units.ft
     segment.mach       = 2.02
-    segment.distance   = 3000.0 * Units.nmi
+    segment.distance   = 1100.0 * Units.nmi
         
     mission.append_segment(segment)
     
