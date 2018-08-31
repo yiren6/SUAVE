@@ -3,6 +3,7 @@
 # 
 # Created:  Aug 2014, T. MacDonald
 # Modified: Nov 2016, T. MacDonald
+#           Aug 2018, T. MacDonald
      
 # ----------------------------------------------------------------------
 #  Imports
@@ -59,7 +60,8 @@ def induced_drag_aircraft(state,settings,geometry):
     
     total_induced_drag = np.zeros_like(mach)
     total_induced_drag[mach<.95] = aircraft_lift[mach<.95]**2 / (np.pi*ar*e[mach<.95])
-    total_induced_drag[mach>=.95] = aircraft_lift[mach>=.95]**2 / (np.pi*ar*wing_e) # oswald factor is calculated separately in supersonic conditions
+    total_induced_drag[mach>=.95] = aircraft_lift[mach>=.95]**2 / (np.pi*ar*wing_e) # oswald factor would include wave drag due to lift
+                                                                                    # which is not computed here
         
     # store data
     try:

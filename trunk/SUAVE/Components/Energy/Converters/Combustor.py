@@ -5,6 +5,7 @@
 # Modified: Jan 2016, T. MacDonald
 #           Sep 2017, P. Goncalves
 #           Jan 2018, W. Maier
+#           Aug 2018, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -71,7 +72,7 @@ class Combustor(Energy_Component):
         self.outputs.fuel_to_air_ratio       = 1.0
         self.fuel_data                       = Data()
         self.area_ratio                      = 1.0
-        self.inputs.nondim_ratio             = 1.0 # allows fuel already burned to be added to the flow
+        self.inputs.nondim_mass_ratio        = 1.0 # allows fuel already burned to be added to the flow
     
     def compute(self,conditions):
         """ This computes the output values from the input values according to
@@ -92,6 +93,7 @@ class Combustor(Energy_Component):
         self.inputs.
           stagnation_temperature              [K]
           stagnation_pressure                 [Pa]
+          nondim_mass_ratio                   [-]
 
         Outputs:
         self.outputs.
@@ -122,7 +124,7 @@ class Combustor(Energy_Component):
         Tt4      = self.turbine_inlet_temperature
         pib      = self.pressure_ratio
         eta_b    = self.efficiency
-        nondim_r = self.inputs.nondim_ratio
+        nondim_r = self.inputs.nondim_mass_ratio
         
         # unpacking values from self
         htf    = self.fuel_data.specific_energy

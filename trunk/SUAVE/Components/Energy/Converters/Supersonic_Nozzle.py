@@ -6,6 +6,7 @@
 #           Jun 2017, P. Goncalves
 #           Sep 2017, E. Botero
 #           Jan 2018, W. Maier
+#           Aug 2018, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -113,6 +114,7 @@ class Supersonic_Nozzle(Energy_Component):
         self.
           pressure_ratio                      [-]
           polytropic_efficiency               [-]
+          pressure_recovery                   [-]
         """           
         
         #unpack the values

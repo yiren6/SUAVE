@@ -5,6 +5,7 @@
 # Modified: Jan 2016, T. MacDonald
 #           Sep 2017, P. Goncalves
 #           Jan 2018, W. Maier
+#           Aug 2018, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
@@ -101,6 +102,7 @@ class Compression_Nozzle(Energy_Component):
         self.
           pressure_ratio                      [-]
           polytropic_efficiency               [-]
+          pressure_recovery                   [-]
         """
 
         #unpack from conditions

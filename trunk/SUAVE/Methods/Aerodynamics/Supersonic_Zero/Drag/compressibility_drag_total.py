@@ -4,6 +4,7 @@
 # Created:  Aug 2014, T. MacDonald
 # Modified: Jun 2017, T. MacDonald
 #           Jul 2017, T. MacDonald
+#           Aug 2018, T. MacDonald
 
 # ----------------------------------------------------------------------
 #  Imports
