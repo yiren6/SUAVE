@@ -31,9 +31,9 @@ def vehicle_setup(source_ratio=1.):
     # ------------------------------------------------------------------    
 
     # mass properties
-    vehicle.mass_properties.max_takeoff               = 135000.   # kg
+    vehicle.mass_properties.max_takeoff               = 185000.   # kg
     vehicle.mass_properties.operating_empty           = 78700.   # kg
-    vehicle.mass_properties.takeoff                   = 135000.   # kg
+    vehicle.mass_properties.takeoff                   = 185000.   # kg
     vehicle.mass_properties.cargo                     = 1000.  * Units.kilogram   
         
     # envelope properties
@@ -308,7 +308,7 @@ def vehicle_setup(source_ratio=1.):
     inlet_nozzle.tag = 'inlet_nozzle'
     
     # setup
-    inlet_nozzle.polytropic_efficiency = 0.98
+    inlet_nozzle.polytropic_efficiency = 1.0
     inlet_nozzle.pressure_ratio        = 1.0
     inlet_nozzle.pressure_recovery     = 0.94
     
@@ -324,7 +324,7 @@ def vehicle_setup(source_ratio=1.):
     compressor.tag = 'low_pressure_compressor'
 
     # setup
-    compressor.polytropic_efficiency = 0.91
+    compressor.polytropic_efficiency = 0.88
     compressor.pressure_ratio        = 3.1    
     
     # add to network
@@ -339,7 +339,7 @@ def vehicle_setup(source_ratio=1.):
     compressor.tag = 'high_pressure_compressor'
     
     # setup
-    compressor.polytropic_efficiency = 0.91
+    compressor.polytropic_efficiency = 0.88
     compressor.pressure_ratio        = 5.0  
     
     # add to network
@@ -355,7 +355,7 @@ def vehicle_setup(source_ratio=1.):
     
     # setup
     turbine.mechanical_efficiency = 0.99
-    turbine.polytropic_efficiency = 0.93     
+    turbine.polytropic_efficiency = 0.89
     
     # add to network
     turbojet.append(turbine)
@@ -370,7 +370,7 @@ def vehicle_setup(source_ratio=1.):
 
     # setup
     turbine.mechanical_efficiency = 0.99
-    turbine.polytropic_efficiency = 0.93     
+    turbine.polytropic_efficiency = 0.87
     
     # add to network
     turbojet.append(turbine)
@@ -384,10 +384,10 @@ def vehicle_setup(source_ratio=1.):
     combustor.tag = 'combustor'
     
     # setup
-    combustor.efficiency                = 0.99
+    combustor.efficiency                = 0.94
     combustor.alphac                    = 1.0     
-    combustor.turbine_inlet_temperature = 1450. + 273.15
-    combustor.pressure_ratio            = 1.0
+    combustor.turbine_inlet_temperature = 1440.
+    combustor.pressure_ratio            = 0.92
     combustor.fuel_data                 = SUAVE.Attributes.Propellants.Jet_A()    
     
     # add to network
@@ -401,9 +401,9 @@ def vehicle_setup(source_ratio=1.):
     afterburner.tag = 'afterburner'
     
     # setup
-    afterburner.efficiency                = 0.41
+    afterburner.efficiency                = 0.9
     afterburner.alphac                    = 1.0     
-    afterburner.turbine_inlet_temperature = 1975
+    afterburner.turbine_inlet_temperature = 1500
     afterburner.pressure_ratio            = 1.0
     afterburner.fuel_data                 = SUAVE.Attributes.Propellants.Jet_A()    
     
@@ -419,8 +419,8 @@ def vehicle_setup(source_ratio=1.):
     nozzle.tag = 'core_nozzle'
     
     # setup
-    nozzle.polytropic_efficiency = 0.95
-    nozzle.pressure_ratio        = 0.99    
+    nozzle.pressure_recovery     = 0.95
+    nozzle.pressure_ratio        = 1.   
     
     # add to network
     turbojet.append(nozzle)
@@ -434,25 +434,10 @@ def vehicle_setup(source_ratio=1.):
 
     # setup
     nozzle.polytropic_efficiency = 0.95
-    nozzle.pressure_ratio        = 0.99    
+    nozzle.pressure_ratio        = 1.    
     
     # add to network
     turbojet.append(nozzle)
-    
-    
-    # ------------------------------------------------------------------
-    #  Component 10 - Fan
-    
-    # instantiate
-    fan = SUAVE.Components.Energy.Converters.Fan()   
-    fan.tag = 'fan'
-
-    # setup
-    fan.polytropic_efficiency = 0.93
-    fan.pressure_ratio        = 1.7    
-    
-    # add to network
-    turbojet.append(fan)
     
     
     # ------------------------------------------------------------------
@@ -470,7 +455,7 @@ def vehicle_setup(source_ratio=1.):
     #isa_deviation = 0.
     
     #total design thrust (includes all the engines)
-    thrust.total_design             = 40000. * Units.lbf
+    thrust.total_design             = 44000. * Units.lbf
  
     # Note: Sizing builds the propulsor. It does not actually set the size of the turbojet
     #design sizing conditions

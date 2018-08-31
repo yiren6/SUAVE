@@ -227,10 +227,10 @@ def plot_mission(results,line_style='bo-'):
     axes = plt.gca()
     for i in range(len(results.segments)):
         time     = results.segments[i].conditions.frames.inertial.time[:,0] / Units.min
-        altitude = results.segments[i].conditions.freestream.altitude[:,0] / Units.km
+        altitude = results.segments[i].conditions.freestream.altitude[:,0] / Units.ft
         axes.plot(time, altitude, line_style)
     axes.set_xlabel('Time (mins)')
-    axes.set_ylabel('Altitude (km)')
+    axes.set_ylabel('Altitude (ft)')
     axes.grid(True)
 
 
@@ -522,12 +522,12 @@ def mission_setup(analyses):
     segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
     segment.tag = "climb_1"
     
-    segment.analyses.extend( analyses.cruise )
+    segment.analyses.extend( analyses.climb )
     
     segment.altitude_start = 0.0   * Units.km
-    segment.altitude_end   = 3.05   * Units.km
-    segment.air_speed      = 128.6 * Units['m/s']
-    segment.climb_rate     = 20.32 * Units['m/s']
+    segment.altitude_end   = 4000. * Units.ft
+    segment.airpseed       = 250.  * Units.kts
+    segment.climb_rate     = 4000. * Units['ft/min']
     
     # add to misison
     mission.append_segment(segment)
@@ -542,116 +542,80 @@ def mission_setup(analyses):
     
     segment.analyses.extend( analyses.cruise )
     
-    segment.altitude_end   = 4.57   * Units.km
-    segment.air_speed      = 205.8  * Units['m/s']
-    segment.climb_rate     = 10.16  * Units['m/s']
+    segment.altitude_end = 10000. * Units.ft
+    segment.airpseed     = 250.  * Units.kts
+    segment.climb_rate   = 2500. * Units['ft/min']
     
     # add to mission
     mission.append_segment(segment)
     
-    afterburning_segments = True
+    # ------------------------------------------------------------------
+    #   Second Climb Segment: constant Speed, constant segment angle 
+    # ------------------------------------------------------------------    
     
-    if afterburning_segments == False:
+    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+    segment.tag = "climb_2"
     
-        # ------------------------------------------------------------------
-        #   Third Climb Segment: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
-        segment.tag = "climb_3"
-        
-        segment.analyses.extend( analyses.cruise )
-        
-        segment.altitude_end = 7.60   * Units.km
-        segment.mach_start   = 0.64
-        segment.mach_end     = 1.0
-        segment.climb_rate   = 5.05  * Units['m/s']
-        
-        # add to mission
-        mission.append_segment(segment)
-        
-        # ------------------------------------------------------------------
-        #   Fourth Climb Segment: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
-        segment.tag = "climb_4"
-        
-        segment.analyses.extend( analyses.cruise )
-        
-        segment.altitude_end = 15.24   * Units.km
-        segment.mach_start   = 1.0
-        segment.mach_end     = 2.02
-        segment.climb_rate   = 5.08  * Units['m/s']
-        
-        # add to mission
-        mission.append_segment(segment)
-        
-    else:
+    segment.analyses.extend( analyses.cruise )
     
-        # ------------------------------------------------------------------
-        #   Third Climb Segment: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_3"
-        
-        segment.analyses.extend( analyses.climb )
-        
-        segment.altitude_end = 4000. * Units.ft
-        segment.airpseed     = 250.  * Units.kts
-        segment.climb_rate   = 4000. * Units['ft/min']
-        
-        # add to mission
-        mission.append_segment(segment)
-        
-        # ------------------------------------------------------------------
-        #   Third Climb Segment Part 2: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_4"
-        
-        segment.analyses.extend( analyses.cruise )
-        
-        segment.altitude_end = 8000. * Units.ft
-        segment.airpseed     = 250.  * Units.kts
-        segment.climb_rate   = 2000. * Units['ft/min']
-        
-        # add to mission
-        mission.append_segment(segment)    
-        
-        # ------------------------------------------------------------------
-        #   Fourth Climb Segment: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Climb.Constant_Speed_Constant_Rate(base_segment)
-        segment.tag = "climb_41"
-        
-        segment.analyses.extend( analyses.cruise )
-        
-        segment.altitude_end = 33000. * Units.ft
-        segment.airpseed     = 400.   * Units.kts
-        segment.climb_rate   = 3000.  * Units['ft/min']
-        
-        # add to mission
-        mission.append_segment(segment)     
-        
-        # ------------------------------------------------------------------
-        #   Fourth Climb Segment Part 2: linear Mach, constant segment angle 
-        # ------------------------------------------------------------------    
-        
-        segment = Segments.Cruise.Constant_Acceleration_Constant_Altitude(base_segment)
-        segment.tag = "accel_1"
-        
-        segment.analyses.extend( analyses.cruise )
-        
-        segment.acceleration      = 1.  * Units['m/s/s']
-        segment.air_speed_start   = 0.0 * Units['m/s']
-        segment.air_speed_end     = 1.0 * Units['m/s']
-        
-        # add to mission
-        mission.append_segment(segment)      
+    segment.altitude_end = 33000. * Units.ft
+    segment.mach_start   = .6
+    segment.mach_end     = 0.95
+    segment.climb_rate   = 2500. * Units['ft/min']
+    
+    # add to mission
+    mission.append_segment(segment)    
+
+    # ------------------------------------------------------------------
+    #   Third Climb Segment: linear Mach, constant segment angle 
+    # ------------------------------------------------------------------    
+      
+    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+    segment.tag = "climb_3"
+    
+    segment.analyses.extend( analyses.climb )
+    
+    segment.altitude_end = 34000. * Units.ft
+    segment.mach_start   = 0.95
+    segment.mach_end     = 1.0
+    segment.climb_rate   = 2000.  * Units['ft/min']
+    
+    # add to mission
+    mission.append_segment(segment) 
+
+    # ------------------------------------------------------------------
+    #   Third Climb Segment: linear Mach, constant segment angle 
+    # ------------------------------------------------------------------    
+      
+    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+    segment.tag = "climb_4"
+    
+    segment.analyses.extend( analyses.climb )
+    
+    segment.altitude_end = 40000. * Units.ft
+    segment.mach_start   = 1.0
+    segment.mach_end     = 1.7
+    segment.climb_rate   = 2000.  * Units['ft/min']
+    
+    # add to mission
+    mission.append_segment(segment)
+    
+    # ------------------------------------------------------------------
+    #   Fourth Climb Segment: linear Mach, constant segment angle 
+    # ------------------------------------------------------------------    
+      
+    segment = Segments.Climb.Linear_Mach_Constant_Rate(base_segment)
+    segment.tag = "climb_5"
+    
+    segment.analyses.extend( analyses.cruise )
+    
+    segment.altitude_end = 50000. * Units.ft
+    segment.mach_start   = 1.7
+    segment.mach_end     = 2.02
+    segment.climb_rate   = 2000.  * Units['ft/min']
+    
+    # add to mission
+    mission.append_segment(segment)     
     
 
     # ------------------------------------------------------------------
@@ -661,11 +625,11 @@ def mission_setup(analyses):
     ## Cruise-climb
     
     segment = Segments.Climb.Constant_Mach_Constant_Rate(base_segment)
-    segment.tag = "climb_5"
+    segment.tag = "climb_6"
     
     segment.analyses.extend( analyses.cruise )
     
-    segment.altitude_end = 18.288   * Units.km
+    segment.altitude_end = 60000. * Units.ft
     segment.mach_number  = 2.02
     segment.climb_rate   = 0.65  * Units['m/s']
     
@@ -681,7 +645,7 @@ def mission_setup(analyses):
     
     segment.analyses.extend( analyses.cruise )
     
-    segment.altitude   = 55000. * Units.ft
+    segment.altitude   = 60000. * Units.ft
     segment.mach       = 2.02
     segment.distance   = 3000.0 * Units.nmi
         

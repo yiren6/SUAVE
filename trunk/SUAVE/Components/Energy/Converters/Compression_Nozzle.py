@@ -151,7 +151,7 @@ class Compression_Nozzle(Energy_Component):
             Pt_out[i_high] = pid*Pt_in[i_high]*((((gamma[i_high]+1.)*(Mo[i_high]**2.))/((gamma[i_high]-1.)*Mo[i_high]**2.+2.))**(gamma[i_high]/(gamma[i_high]-1.)))*((gamma[i_high]+1.)/(2.*gamma[i_high]*Mo[i_high]**2.-(gamma[i_high]-1.)))**(1./(gamma[i_high]-1.))
             P_out[i_high]  = Pt_out[i_high]*(1.+(gamma[i_high]-1.)/2.*Mach[i_high]**2.)**(-gamma[i_high]/(gamma[i_high]-1.))
         else:
-            Pt_out  = Pt_in*pid
+            Pt_out  = Pt_in*pid*eta_rec
             
             # in case pressures go too low
             if np.any(Pt_out<Po):

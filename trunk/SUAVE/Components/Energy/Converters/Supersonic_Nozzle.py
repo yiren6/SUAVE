@@ -63,6 +63,7 @@ class Supersonic_Nozzle(Energy_Component):
         self.tag = 'Nozzle'
         self.polytropic_efficiency           = 1.0
         self.pressure_ratio                  = 1.0
+        self.pressure_recovery               = 1.0
         self.inputs.stagnation_temperature   = 0.
         self.inputs.stagnation_pressure      = 0.
         self.outputs.stagnation_temperature  = 0.
@@ -132,13 +133,13 @@ class Supersonic_Nozzle(Energy_Component):
         #unpack from self
         pid      = self.pressure_ratio
         etapold  = self.polytropic_efficiency
-        
+        eta_rec =  self.pressure_recovery
         
         #Method for computing the nozzle properties
         
         #--Getting the output stagnation quantities
-        Pt_out   = Pt_in*pid
-        Tt_out   = Tt_in*pid**((gamma-1)/(gamma)*etapold)
+        Pt_out   = Pt_in*pid*eta_rec
+        Tt_out   = Tt_in*(pid*eta_rec)**((gamma-1)/(gamma)*etapold)
         ht_out   = Cp*Tt_out
         
         
