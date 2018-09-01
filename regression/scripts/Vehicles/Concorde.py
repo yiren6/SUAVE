@@ -16,7 +16,7 @@ from SUAVE.Methods.Propulsion.turbojet_sizing import turbojet_sizing
 from SUAVE.Methods.Propulsion.turbofan_sizing import turbofan_sizing
 from SUAVE.Input_Output.OpenVSP.vsp_write import write
 
-def vehicle_setup(source_ratio=1.):
+def vehicle_setup():
 
     # ------------------------------------------------------------------
     #   Initialize the Vehicle
@@ -101,12 +101,6 @@ def vehicle_setup(source_ratio=1.):
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 67. * Units.deg
     segment.thickness_to_chord    = 0.03
-    segment.vsp_mesh              = Data()
-    segment.vsp_mesh.inner_radius    = 1./source_ratio
-    segment.vsp_mesh.outer_radius    = 1./source_ratio
-    segment.vsp_mesh.inner_length    = .044/source_ratio
-    segment.vsp_mesh.outer_length    = .044/source_ratio
-    segment.vsp_mesh.matching_TE     = False
     segment.append_airfoil(wing_airfoil)
     wing.Segments.append(segment)
     
@@ -119,12 +113,6 @@ def vehicle_setup(source_ratio=1.):
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 48. * Units.deg
     segment.thickness_to_chord    = 0.03
-    segment.vsp_mesh              = Data()
-    segment.vsp_mesh.inner_radius    = 1./source_ratio
-    segment.vsp_mesh.outer_radius    = .88/source_ratio
-    segment.vsp_mesh.inner_length    = .044/source_ratio
-    segment.vsp_mesh.outer_length    = .044/source_ratio 
-    segment.vsp_mesh.matching_TE     = False
     segment.append_airfoil(wing_airfoil)
     wing.Segments.append(segment)
     
@@ -137,11 +125,6 @@ def vehicle_setup(source_ratio=1.):
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 71. * Units.deg 
     segment.thickness_to_chord    = 0.03
-    segment.vsp_mesh              = Data()
-    segment.vsp_mesh.inner_radius    = .88/source_ratio
-    segment.vsp_mesh.outer_radius    = .22/source_ratio
-    segment.vsp_mesh.inner_length    = .044/source_ratio
-    segment.vsp_mesh.outer_length    = .011/source_ratio 
     segment.append_airfoil(wing_airfoil)
     wing.Segments.append(segment)    
     
@@ -201,11 +184,6 @@ def vehicle_setup(source_ratio=1.):
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 63. * Units.deg
     segment.thickness_to_chord    = 0.03
-    segment.vsp_mesh              = Data()
-    segment.vsp_mesh.inner_radius    = 2.9/source_ratio
-    segment.vsp_mesh.outer_radius    = 1.5/source_ratio
-    segment.vsp_mesh.inner_length    = .044/source_ratio
-    segment.vsp_mesh.outer_length    = .044/source_ratio
     segment.append_airfoil(tail_airfoil)
     wing.Segments.append(segment)
     
@@ -218,11 +196,6 @@ def vehicle_setup(source_ratio=1.):
     segment.dihedral_outboard     = 0.
     segment.sweeps.quarter_chord  = 40. * Units.deg
     segment.thickness_to_chord    = 0.03
-    segment.vsp_mesh              = Data()
-    segment.vsp_mesh.inner_radius    = 1.5/source_ratio
-    segment.vsp_mesh.outer_radius    = .54/source_ratio
-    segment.vsp_mesh.inner_length    = .044/source_ratio
-    segment.vsp_mesh.outer_length    = .027/source_ratio 
     segment.append_airfoil(tail_airfoil)
     wing.Segments.append(segment)
     
@@ -260,7 +233,7 @@ def vehicle_setup(source_ratio=1.):
     
     fuselage.effective_diameter    = 3.1
     
-    fuselage.differential_pressure = 7.4e4 * Units.pascal    # Maximum differential pressure
+    fuselage.differential_pressure = 7.4e4 * Units.pascal    # Maximum differential pressure 
     
     fuselage.OpenVSP_values = Data() # VSP uses degrees directly
     
