@@ -10,11 +10,10 @@
 
 # for enforcing attribute style access names
 import string
-from warnings import warn
 chars = string.punctuation + string.whitespace
-t_table = str.maketrans( chars          + string.ascii_uppercase , 
-                            '_'*len(chars) + string.ascii_lowercase )
-
+t_table = string.maketrans( chars          + string.uppercase , 
+                            '_'*len(chars) + string.lowercase )
+from warnings import warn
 dictgetitem = dict.__getitem__
 objgetattrib = object.__getattribute__
 

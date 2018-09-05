@@ -14,8 +14,8 @@ from collections import OrderedDict
 # for enforcing attribute style access names
 import string
 chars = string.punctuation + string.whitespace
-t_table = str.maketrans( chars          + string.ascii_uppercase , 
-                            '_'*len(chars) + string.ascii_lowercase )
+t_table = string.maketrans( chars          + string.uppercase , 
+                            '_'*len(chars) + string.lowercase )
 
 from warnings import warn
 import numpy as np
