@@ -13,3 +13,4 @@ from .JP7 import JP7
 from .Liquid_H2 import Liquid_H2
 from .LOX_LH2 import LOX_LH2
 from .LOX_RP1 import LOX_RP1
+from .LOX_Ethyl import LOX_Ethyl
