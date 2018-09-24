@@ -1,6 +1,6 @@
 # Bell_X1_tut.py
 # 
-# Created:  April 2018, W. Maier
+# Created:  Sept 2018, W. Maier
 # Modified: 
 
 # ----------------------------------------------------------------------
@@ -175,16 +175,16 @@ def mission_setup(analyses):
     #mission.append_segment(segment)    
 
     # ------------------------------------------------------------------
-    # Cruise Segment: Constant Throttle, Constant Altitude, Subsonic to M = 1
+    # Cruise Segment: Constant Throttle, Constant Altitude, Subsonic to M > 1
     # ------------------------------------------------------------------
     segment = Segments.Cruise.Constant_Throttle_Constant_Altitude(base_segment)
     segment.tag = "cruise"
     segment.analyses.extend(analyses.general)    
-    segment.altitude        = 43000.0 * Units.feet
+    segment.altitude        = 43000.0 * Units['ft']
     segment.throttle        = 1.0
-    segment.air_speed_start = 150.0   * Units.m/Units.s
+    segment.air_speed_start = 150.0   * Units['m/s']
     segment.air_speed_end   = 316.0   * Units['m/s']
-    segment.state.numerics.number_control_points = 32
+    segment.state.numerics.number_control_points = 256
 
     # add to misison
     mission.append_segment(segment)
