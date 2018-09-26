@@ -42,19 +42,16 @@ def main():
         
     aerodynamics.initialize()    
     
-    
     #no of test points
     test_num = 11
     
     #specify the angle of attack
     angle_of_attacks = np.linspace(-.174,.174,test_num)[:,None] #* Units.deg
     
-    
     # Cruise conditions (except Mach number)
     state = SUAVE.Analyses.Mission.Segments.Conditions.State()
     state.conditions = SUAVE.Analyses.Mission.Segments.Conditions.Aerodynamics()
-    
-    
+       
     state.expand_rows(test_num)    
         
     # --------------------------------------------------------------------

@@ -74,7 +74,7 @@ def parasite_drag_propulsor(state,settings,geometry):
     
     # form factor according to Raymer equation (pg 283 of Aircraft Design: A Conceptual Approach)
     # Checking if engine is internal
-    if propulsor.has_key('internal'):
+    if 'internal' in propulsor:
         if propulsor.internal:
             k_prop  = 0.0
             Sref    = 1.0
