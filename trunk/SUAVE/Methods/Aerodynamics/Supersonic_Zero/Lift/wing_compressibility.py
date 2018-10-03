@@ -52,8 +52,8 @@ def wing_compressibility(state,settings,geometry):
     
     # compressibility correction
     compress_corr = np.array([[0.0]] * len(Mc))
-    compress_corr[Mc < 0.95] = 1./(np.sqrt(1.-Mc[Mc < 0.95]**2.))
-    compress_corr[Mc >= 0.95] = 1./(np.sqrt(1.-0.95**2)) # Values for Mc > 1.05 are update after this assignment 
+    compress_corr[Mc < 0.99] = 1./(np.sqrt(1.-Mc[Mc < 0.99]**2.))
+    compress_corr[Mc >= 0.99] = 1./(np.sqrt(1.-0.99**2)) # Values for Mc > 1.05 are update after this assignment 
     compress_corr[Mc > 1.05] = 1./(np.sqrt(Mc[Mc > 1.05]**2.-1.))
 
     # correct lift

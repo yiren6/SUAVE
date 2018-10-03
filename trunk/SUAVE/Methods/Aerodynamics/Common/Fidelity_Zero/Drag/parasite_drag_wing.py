@@ -105,11 +105,19 @@ def parasite_drag_wing(state,settings,geometry):
     cos_sweep = np.cos(sweep_w)
     cos2      = cos_sweep*cos_sweep
     
+    # Creating interpolation to prevent sharp disconitinuities
+    k_w_99 = 1.0+(2.0*C*(t_c_w*cos2))/(np.sqrt(1.0-0.99*0.99*cos2))\
+        +(C*C*cos2*t_c_w*t_c_w*(1.0+5.0*(cos2)))\
+        /(2.0*(1.0-(0.99*cos_sweep)**2.0))
+    
+    k_w_105 = 1.0
+    
     k_w = 1. + ( 2.* C * (t_c_w * cos2) ) / ( np.sqrt(1.- Mc*Mc * cos2) )  \
         + ( C*C * cos2 * t_c_w*t_c_w * (1. + 5.*(cos2)) ) \
         / (2.*(1.-(Mc*cos_sweep)**2.))      
     
-    k_w[Mc >= 0.95] =  1. 
+    k_w[Mc >= 0.99] = k_w_99+ (k_w_105- k_w_99) \
+        *(Mc[Mc > 0.99]-0.99)/(1.05-0.99)
 
     # find the final result
     wing_parasite_drag = k_w * cf_w_u * Swet / Sref /2. + k_w * cf_w_l * Swet / Sref /2.

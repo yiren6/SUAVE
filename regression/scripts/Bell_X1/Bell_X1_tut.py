@@ -100,8 +100,8 @@ def base_analysis(vehicle):
 
     # ------------------------------------------------------------------
     #  Aerodynamics Analysis
-    aerodynamics = SUAVE.Analyses.Aerodynamics.AERODAS()
-    aerodynamics.settings.drag_coefficient_increment = 0.0
+    aerodynamics = SUAVE.Analyses.Aerodynamics.Supersonic_Zero()
+    #aerodynamics.settings.drag_coefficient_increment = 0.0
     aerodynamics.geometry = vehicle
     analyses.append(aerodynamics)
 
@@ -184,8 +184,8 @@ def mission_setup(analyses):
     segment.altitude        = 43000.0 * Units['ft']
     segment.throttle        = 1.0
     segment.air_speed_start = 150.0   * Units['m/s']
-    segment.air_speed_end   = 316.0   * Units['m/s']
-    segment.state.numerics.number_control_points = 16
+    segment.air_speed_end   = 290.0   * Units['m/s']
+    segment.state.numerics.number_control_points = 256
 
     # add to misison
     mission.append_segment(segment)
@@ -239,6 +239,7 @@ def plot_mission(results,line_style='bo-'):
     # ------------------------------------------------------------------
     fig = plt.figure("Aerodynamic Coefficients",figsize=(8,10))
     for segment in results.segments.values():
+        mach   = segment.conditions.freestream.mach_number[:,0]
         time   = segment.conditions.frames.inertial.time[:,0] / Units.min
         CLift  = segment.conditions.aerodynamics.lift_coefficient[:,0]
         CDrag  = segment.conditions.aerodynamics.drag_coefficient[:,0]
@@ -257,7 +258,7 @@ def plot_mission(results,line_style='bo-'):
         axes.grid(True)
 
         axes = fig.add_subplot(3,1,3)
-        axes.plot( time , aoa , 'ro-' )
+        axes.plot( mach , aoa , 'ro-' )
         axes.set_xlabel('Time (min)',axis_font)
         axes.set_ylabel('AOA (deg)',axis_font)
         axes.get_yaxis().get_major_formatter().set_scientific(False)
@@ -268,39 +269,40 @@ def plot_mission(results,line_style='bo-'):
     # ------------------------------------------------------------------
     #   Aerodynamics 2
     # ------------------------------------------------------------------
-    #fig = plt.figure("Drag Components",figsize=(8,10))
-    #axes = plt.gca()
-    #for i, segment in enumerate(results.segments.values()):
-        #time   = segment.conditions.frames.inertial.time[:,0] / Units.min
-        #drag_breakdown = segment.conditions.aerodynamics.drag_breakdown
-        #cdp = drag_breakdown.parasite.total[:,0]
-        #cdi = drag_breakdown.induced.total[:,0]
-        #cdc = drag_breakdown.compressible.total[:,0]
-        #cdm = drag_breakdown.miscellaneous.total[:,0]
-        #cd  = drag_breakdown.total[:,0]
+    fig = plt.figure("Drag Components",figsize=(8,10))
+    axes = plt.gca()
+    for i, segment in enumerate(results.segments.values()):
+        mach   = segment.conditions.freestream.mach_number[:,0]
+        time   = segment.conditions.frames.inertial.time[:,0] / Units.min
+        drag_breakdown = segment.conditions.aerodynamics.drag_breakdown
+        cdp = drag_breakdown.parasite.total[:,0]
+        cdi = drag_breakdown.induced.total[:,0]
+        cdc = drag_breakdown.compressible.total[:,0]
+        cdm = drag_breakdown.miscellaneous.total[:,0]
+        cd  = drag_breakdown.total[:,0]
 
-        #if line_style == 'bo-':
-            #axes.plot( time , cdp , 'ko-', label='CD parasite' )
-            #axes.plot( time , cdi , 'bo-', label='CD induced' )
-            #axes.plot( time , cdc , 'go-', label='CD compressibility' )
-            #axes.plot( time , cdm , 'yo-', label='CD miscellaneous' )
-            #axes.plot( time , cd  , 'ro-', label='CD total'   )
+        if line_style == 'bo-':
+            axes.plot( mach , cdp , 'ko-', label='CD parasite' )
+            axes.plot( mach , cdi , 'bo-', label='CD induced' )
+            axes.plot( mach , cdc , 'go-', label='CD compressibility' )
+            axes.plot( mach , cdm , 'yo-', label='CD miscellaneous' )
+            axes.plot( mach , cd  , 'ro-', label='CD total'   )
 
-            #if i == 0:
-                #axes.legend(loc='upper center')            
+            if i == 0:
+                axes.legend(loc='upper center')            
 
-        #else:
-            #axes.plot( time , cdp , line_style )
-            #axes.plot( time , cdi , line_style )
-            #axes.plot( time , cdc , line_style )
-            #axes.plot( time , cdm , line_style )
-            #axes.plot( time , cd  , line_style )            
+        else:
+            axes.plot( mach , cdp , line_style )
+            axes.plot( mach , cdi , line_style )
+            axes.plot( mach , cdc , line_style )
+            axes.plot( mach , cdm , line_style )
+            axes.plot( mach , cd  , line_style )            
 
-    #axes.set_xlabel('Time (min)')
-    #axes.set_ylabel('CD')
-    #axes.grid(True)
-    ##plt.savefig("B737_drag.pdf")
-    ##plt.savefig("B737_drag.png")
+    axes.set_xlabel('Time (min)')
+    axes.set_ylabel('CD')
+    axes.grid(True)
+    #plt.savefig("B737_drag.pdf")
+    #plt.savefig("B737_drag.png")
 
     # ------------------------------------------------------------------
     #   Altitude, sfc, vehicle weight

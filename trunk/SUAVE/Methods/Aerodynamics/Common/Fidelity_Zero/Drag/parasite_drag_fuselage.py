@@ -76,15 +76,27 @@ def parasite_drag_fuselage(state,settings,geometry):
     du_max_u = np.array([[0.0]] * len(Mc))
     k_fus = np.array([[0.0]] * len(Mc))
     
-    D[Mc < 0.95] = np.sqrt(1 - (1-Mc[Mc < 0.95]**2) * d_d**2)
-    a[Mc < 0.95] = 2 * (1-Mc[Mc < 0.95]**2) * (d_d**2) *(np.arctanh(D[Mc < 0.95])-D[Mc < 0.95]) / (D[Mc < 0.95]**3)
-    du_max_u[Mc < 0.95] = a[Mc < 0.95] / ( (2-a[Mc < 0.95]) * (1-Mc[Mc < 0.95]**2)**0.5 )
+    D[Mc < 1.00] = np.sqrt(1. - (1.-Mc[Mc < 1.00]**2.) * d_d**2)
+    a[Mc < 1.00] = 2. * (1.-Mc[Mc < 1.00]**2) * (d_d**2.) *(np.arctanh(D[Mc < 1.00])-D[Mc < 1.00]) / (D[Mc < 1.00]**3.)
+    du_max_u[Mc < 1.00] = a[Mc < 1.00] / ( (2.-a[Mc < 1.00]) * (1.-Mc[Mc < 1.00]**2)**0.5 )
     
-    D[Mc >= 0.95] = np.sqrt(1 - d_d**2)
-    a[Mc >= 0.95] = 2  * (d_d**2) *(np.arctanh(D[Mc >= 0.95])-D[Mc >= 0.95]) / (D[Mc >= 0.95]**3)
-    du_max_u[Mc >= 0.95] = a[Mc >= 0.95] / ( (2-a[Mc >= 0.95]) )
     
-    k_fus = (1 + form_factor*du_max_u)**2
+    # Creating interpolation to prevent sharp discontinuities
+    D99   = np.sqrt(1.- (1.-0.99*0.99)*d_d*d_d)
+    a99   = 2.*(1-0.99*0.99)*(d_d*d_d)*(np.arctanh(D99)-D99)/(D99**3.)
+    du99  = a99/((2.0-a99)*(1.0-0.99*0.99)**0.5)
+    
+    D105  = np.sqrt(1. - d_d*d_d)
+    a105  = 2.*(d_d*d_d) *(np.arctanh(D105)-D105) / (D105**3.)
+    du105 = a105 / (2.-a105)  
+    
+    du_max_u[np.logical_and(Mc<=1.0,Mc>=.99)] = du99+(du105-du99)*(Mc[np.logical_and(Mc<=1.00,Mc>=.99)]-0.99)/(1.05-0.99)
+    
+    D[Mc > 1.05] = np.sqrt(1.- d_d**2.)
+    a[Mc > 1.05] = 2.  * (d_d**2) *(np.arctanh(D[Mc >= 1.05])-D[Mc >= 1.05]) / (D[Mc >= 1.05]**3.)
+    du_max_u[Mc > 1.05] = a[Mc >= 1.05] / ( (2.-a[Mc >= 1.05]) )
+    
+    k_fus = (1. + form_factor*du_max_u)**2.
 
     fuselage_parasite_drag = k_fus * cf_fus * Swet / Sref  
     
