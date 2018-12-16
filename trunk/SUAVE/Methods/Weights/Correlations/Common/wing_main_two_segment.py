@@ -70,18 +70,16 @@ def wing_main_two_segment(S_gross_w,b,lambda_w,t_c_w,sweep_le_1,sweep_le_2,y_c,c
     gamma = 16*l_tot*rho/(sigma*t_c_w*np.pi*span)
 
     #Calculate weight of wing for two-segment aircraft wing
-    weight = np.abs(4.22*area + 6. * gamma * (
+    weight = np.abs(4.22*area + gamma * (
         (span**2/8)*(-np.log(root_chord-crank_span*theta1)/theta1 + np.log(root_chord)/theta1)
         + (span**2/8)*(-np.log(crank_chord-b/2*theta2)/theta2 + np.log(crank_chord-crank_span*theta2)/theta2)
         + ((2*root_chord**2*np.log(root_chord-crank_span*theta1)+theta1*crank_span*(2*root_chord+theta1*crank_span))/(4*theta1**3))
         - (2*root_chord**2*np.log(root_chord)/(4*theta1**3))
         + ((2*crank_chord**2*np.log(crank_chord-b/2*theta2))/(4*theta2**3))
-        - ((2*crank_chord**2)/(4*theta2**3)))
+        - ((2*crank_chord**2*np.log(crank_chord-crank_span*theta2)+theta2*crank_span*(2*crank_chord+theta2*crank_span))/(4*theta2**3)))
     )
     weight = weight * Units.lb # Convert lb to kg
  
-    print('weight: {}'.format(weight))
+    #print('weight: {}'.format(weight))
 
     return weight
-
-wing_main_two_segment(358.25, 25.6, 1e-8, 0.03, 69.2584*np.pi/180,69.2584*np.pi/180,6.4,33.8,33.8/2,3.5,185000,78700,2700,276e6)

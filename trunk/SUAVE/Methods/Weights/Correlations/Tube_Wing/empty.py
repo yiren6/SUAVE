@@ -156,13 +156,15 @@ def empty(vehicle,settings=None):
         sweep_le_1  = vehicle.wings['main_wing'].Segments['section_1'].sweeps.leading_edge
         sweep_le_2  = vehicle.wings['main_wing'].Segments['section_2'].sweeps.leading_edge
         y_c         = vehicle.wings['main_wing'].Segments['section_2'].percent_span_location * b/2
-        c_r         = vehicle.wings['main_wing'].chords.root
-        c_c         = vehicle.wings['main_wing'].Segments['section_2'].root_chord_percent * c_r
-        rho         = Aluminum.density
-        sigma       = Aluminum.yield_tensile_strength
+        wing_c_r    = vehicle.wings['main_wing'].chords.root
+        c_c         = vehicle.wings['main_wing'].Segments['section_2'].root_chord_percent * wing_c_r
+        rho         = Aluminum().density
+        #rho         = 4500. * Units['kg/(m**3)']
+        sigma       = Aluminum().yield_tensile_strength
+        #sigma       = 900e6 * Units.Pa
         mac_w       = vehicle.wings['main_wing'].chords.mean_aerodynamic
         wt_wing     = wing_main_two_segment.wing_main_two_segment(S_gross_w,b,lambda_w,t_c_w,sweep_le_1,sweep_le_2,
-                                                                  y_c,c_r,c_c,Nult,TOW,wt_zf,rho,sigma)
+                                                                  y_c,wing_c_r,c_c,Nult,TOW,wt_zf,rho,sigma)
         wt_wing     = wt_wing*(1.-wt_factors.main_wing)
         vehicle.wings['main_wing'].mass_properties.mass = wt_wing
 
@@ -205,6 +207,7 @@ def empty(vehicle,settings=None):
         output_3.wt_tail_vertical = 0.0
         output_3.wt_rudder        = 0.0
         S_v                       = 0.0
+        wt_vtail_tot              = 0.0
         warnings.warn("There is no Vertical Tail Weight being added to the Configuration", stacklevel=1)    
         
     else:     
@@ -302,7 +305,7 @@ def empty(vehicle,settings=None):
     vehicle.hydraulics                          = hydraulics
     vehicle.optionals                           = optionals
     vehicle.landing_gear                        = landing_gear_component
-    vehicle.wings['vertical_stabilizer'].rudder = rudder
+    #vehicle.wings['vertical_stabilizer'].rudder = rudder
     
     
 
