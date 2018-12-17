@@ -16,9 +16,11 @@ from .systems         import systems
 from .tail_horizontal import tail_horizontal
 from .tail_vertical   import tail_vertical
 from SUAVE.Methods.Weights.Correlations.Common import wing_main as wing_main
+from SUAVE.Methods.Weights.Correlations.Common import wing_main_two_segment as wing_main_two_segment
 from SUAVE.Methods.Weights.Correlations.Common import landing_gear as landing_gear
 from SUAVE.Methods.Weights.Correlations.Common import payload as payload
 from SUAVE.Methods.Weights.Correlations import Propulsion as Propulsion
+from SUAVE.Attributes.Solids.Aluminum import Aluminum
 import warnings
 
 # ----------------------------------------------------------------------
@@ -146,7 +148,26 @@ def empty(vehicle,settings=None):
         wt_wing = 0.0
         wing_c_r = 0.0
         warnings.warn("There is no Wing Weight being added to the Configuration", stacklevel=1)
-        
+
+    elif len(vehicle.wings['main_wing'].Segments) == 2:
+        b           = vehicle.wings['main_wing'].spans.projected
+        lambda_w    = vehicle.wings['main_wing'].taper
+        t_c_w       = vehicle.wings['main_wing'].thickness_to_chord
+        sweep_le_1  = vehicle.wings['main_wing'].Segments['section_1'].sweeps.leading_edge
+        sweep_le_2  = vehicle.wings['main_wing'].Segments['section_2'].sweeps.leading_edge
+        y_c         = vehicle.wings['main_wing'].Segments['section_2'].percent_span_location * b/2
+        wing_c_r    = vehicle.wings['main_wing'].chords.root
+        c_c         = vehicle.wings['main_wing'].Segments['section_2'].root_chord_percent * wing_c_r
+        rho         = Aluminum().density
+        #rho         = 4500. * Units['kg/(m**3)']
+        sigma       = Aluminum().yield_tensile_strength
+        #sigma       = 900e6 * Units.Pa
+        mac_w       = vehicle.wings['main_wing'].chords.mean_aerodynamic
+        wt_wing     = wing_main_two_segment.wing_main_two_segment(S_gross_w,b,lambda_w,t_c_w,sweep_le_1,sweep_le_2,
+                                                                  y_c,wing_c_r,c_c,Nult,TOW,wt_zf,rho,sigma)
+        wt_wing     = wt_wing*(1.-wt_factors.main_wing)
+        vehicle.wings['main_wing'].mass_properties.mass = wt_wing
+
     else:
         b          = vehicle.wings['main_wing'].spans.projected
         lambda_w   = vehicle.wings['main_wing'].taper
@@ -186,6 +207,7 @@ def empty(vehicle,settings=None):
         output_3.wt_tail_vertical = 0.0
         output_3.wt_rudder        = 0.0
         S_v                       = 0.0
+        wt_vtail_tot              = 0.0
         warnings.warn("There is no Vertical Tail Weight being added to the Configuration", stacklevel=1)    
         
     else:     
@@ -283,7 +305,7 @@ def empty(vehicle,settings=None):
     vehicle.hydraulics                          = hydraulics
     vehicle.optionals                           = optionals
     vehicle.landing_gear                        = landing_gear_component
-    vehicle.wings['vertical_stabilizer'].rudder = rudder
+    #vehicle.wings['vertical_stabilizer'].rudder = rudder
     
     
 
