@@ -54,6 +54,13 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction=.06):
                 h_tail_moment             = (h_tail.origin+h_tail_cg)*h_tail.mass_properties.mass
         else:
                 h_tail_moment = 0
+        # Horizontal Tail
+        if 'canard' in vehicle.wings:
+                canard             = vehicle.wings['canard']
+                canard_cg                 = canard.mass_properties.center_of_gravity
+                canard_moment             = (canard.origin+h_tail_cg)*canard.mass_properties.mass
+        else:
+                canard_moment = 0        
         # Verical Tail
         if 'vertical_stabilizer' in vehicle.wings:
                 v_tail             = vehicle.wings['vertical_stabilizer']  
@@ -150,7 +157,8 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction=.06):
                 sum_moments              = (wing_moment+h_tail_moment+v_tail_moment+control_systems_moment+\
                                             fuselage_moment+propulsor_moment+electrical_systems_moment+\
                                             avionics_moment+furnishings_moment+passengers_moment+ac_moment+\
-                                            fuel_moment+apu_moment+ hydraulics_moment+optionals_moment  )
+                                            fuel_moment+apu_moment+ hydraulics_moment+optionals_moment+\
+                                            canard_moment)
 
                 #took some algebra to get this
                 aft_gear_location                             = sum_moments \
@@ -176,7 +184,7 @@ def compute_aircraft_center_of_gravity(vehicle, nose_load_fraction=.06):
         # ---------------------------------------------------------------------------------
         else:   
 
-                sum_moments              = (wing_moment+h_tail_moment+v_tail_moment+ propulsor_moment)
+                sum_moments              = (wing_moment+h_tail_moment+v_tail_moment+ propulsor_moment+canard_moment)
 
                 vehicle.mass_properties.center_of_gravity      = (sum_moments)/vehicle.mass_properties.max_takeoff
                 vehicle.mass_properties.zero_fuel_center_of_gravity     = vehicle.mass_properties.center_of_gravity

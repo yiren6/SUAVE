@@ -108,6 +108,7 @@ def estimate_take_off_field_length(vehicle,analyses,airport,compute_2nd_seg_clim
     # ==============================================
     # Computing speeds (Vs, V2, 0.7*V2)
     # ==============================================
+    #maximum_lift_coefficient = 1.
     stall_speed = (2 * weight * sea_level_gravity / (rho * reference_area * maximum_lift_coefficient)) ** 0.5
     V2_speed    = V2_VS_ratio * stall_speed
     speed_for_thrust  = 0.70 * V2_speed

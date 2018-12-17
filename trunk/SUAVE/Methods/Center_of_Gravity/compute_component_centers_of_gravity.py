@@ -55,6 +55,15 @@ def compute_component_centers_of_gravity(vehicle, compute_propulsor_origin = Fal
     else: 
         print("no horizontal stabilizer")
         
+    if 'canard' in vehicle.wings:
+        canard                                                  = vehicle.wings['canard']
+        chord_length_h_tail_35_percent_semi_span                = compute_chord_length_from_span_location(canard,.35*canard.spans.projected*.5)
+        canard_35_percent_semi_span_offset                      =.8*np.sin(canard.sweeps.quarter_chord)*.35*.5*canard.spans.projected   
+        canard.mass_properties.center_of_gravity[0]             = .3*chord_length_h_tail_35_percent_semi_span + \
+                                                                      canard_35_percent_semi_span_offset
+    else: 
+        print("no canard")    
+        
     if 'vertical_stabilizer' in vehicle.wings:
         v_tail                                                  = vehicle.wings['vertical_stabilizer']
         chord_length_v_tail_35_percent_semi_span                = compute_chord_length_from_span_location(v_tail,.35*v_tail.spans.projected*.5)

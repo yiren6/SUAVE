@@ -128,20 +128,21 @@ def empty(vehicle,settings=None):
     
     propulsors     = vehicle.propulsors[propulsor_name]
     num_eng        = propulsors.number_of_engines
-    if propulsor_name=='turbofan' or propulsor_name=='Turbofan':
-        # thrust_sls should be sea level static thrust. Using design thrust results in wrong propulsor 
-        # weight estimation. Engine sizing should return this value.
-        # for now, using thrust_sls = design_thrust / 0.20, just for optimization evaluations
-        thrust_sls                       = propulsors.sealevel_static_thrust
-        wt_engine_jet                    = Propulsion.engine_jet(thrust_sls)
-        wt_propulsion                    = Propulsion.integrated_propulsion(wt_engine_jet,num_eng)
-        propulsors.mass_properties.mass  = wt_propulsion 
+    wt_propulsion                   = propulsors.mass_properties.mass
+    #if propulsor_name=='turbofan' or propulsor_name=='Turbofan':
+        ## thrust_sls should be sea level static thrust. Using design thrust results in wrong propulsor 
+        ## weight estimation. Engine sizing should return this value.
+        ## for now, using thrust_sls = design_thrust / 0.20, just for optimization evaluations
+        #thrust_sls                       = propulsors.sealevel_static_thrust
+        #wt_engine_jet                    = Propulsion.engine_jet(thrust_sls)
+        #wt_propulsion                    = Propulsion.integrated_propulsion(wt_engine_jet,num_eng)
+        #propulsors.mass_properties.mass  = wt_propulsion 
         
-    else: #propulsor used is not a turbo_fan; assume mass_properties defined outside model
-        wt_propulsion                   = propulsors.mass_properties.mass
+    #else: #propulsor used is not a turbo_fan; assume mass_properties defined outside model
+        #wt_propulsion                   = propulsors.mass_properties.mass
 
-        if wt_propulsion==0:
-            warnings.warn("Propulsion mass= 0 ;e there is no Engine Weight being added to the Configuration", stacklevel=1)    
+        #if wt_propulsion==0:
+            #warnings.warn("Propulsion mass= 0 ;e there is no Engine Weight being added to the Configuration", stacklevel=1)    
     
     S_gross_w  = vehicle.reference_area
     if 'main_wing' not in vehicle.wings:
@@ -219,7 +220,7 @@ def empty(vehicle,settings=None):
         output_3     = tail_vertical(S_v,Nult,b_v,TOW,t_c_v,sweep_v,S_gross_w,t_tail)
         wt_vtail_tot = output_3.wt_tail_vertical + output_3.wt_rudder
         wt_vtail_tot = wt_vtail_tot*(1.-wt_factors.empennage)
-        vehicle.wings['vertical_stabilizer'].mass_properties.mass = wt_vtail_tot
+        vehicle.wings['vertical_stabilizer'].mass_properties.mass = wt_vtail_tot*wt_factors.num_v_stab
         
     # Calculating Empty Weight of Aircraft
     wt_landing_gear    = landing_gear.landing_gear(TOW)
