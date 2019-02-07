@@ -43,8 +43,8 @@ def main():
     mdot = results.vehicle_mass_rate
     
     # Truth values
-    F_truth    = np.array([[ 1266.66672275,     0.        ,    -0.        ]])
-    mdot_truth = np.array([[ 671.33336306]])
+    F_truth    = np.array([[ 1193.02078318,     0.        ,    -0.        ]])
+    mdot_truth = np.array([[ 701.23126185]])
 
     # Error check
     error = Data()
