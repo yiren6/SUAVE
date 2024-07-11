@@ -153,7 +153,7 @@ def base_analysis(vehicle):
     #  Aerodynamics Analysis
     aerodynamics = SUAVE.Analyses.Aerodynamics.Fidelity_Zero() 
     aerodynamics.geometry                            = vehicle
-    aerodynamics.settings.use_surrogate              = True
+    aerodynamics.settings.use_surrogate              = False    # setting to true use surrogate model which suppresses the computation of the aerodynamic derivatives
     aerodynamics.settings.number_spanwise_vortices   = 5
     aerodynamics.settings.number_chordwise_vortices  = 2    
     aerodynamics.settings.drag_coefficient_increment = 0.0000
@@ -356,7 +356,7 @@ def mission_setup(analyses):
     
     segment.state.numerics.number_control_points = 10
     
-    # post-process aerodynamic derivatives in cruise
+    # post-process aerodynamic derivatives in cruise #! this line compute the deribatives
     segment.process.finalize.post_process.aero_derivatives = SUAVE.Methods.Flight_Dynamics.Static_Stability.compute_aero_derivatives
 
     # add to mission

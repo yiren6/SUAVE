@@ -414,7 +414,7 @@ def VLM(conditions,settings,geometry):
     VL   = np.repeat(VD.vortex_lift,n_sw)
     m_b  = np.atleast_2d(mach[:,0]<1.)
     SPC_cond      = VL*m_b.T
-    SPC[SPC_cond] = -1.
+    SPC[SPC_cond] = -0.1# -1. original code
     SPC           = SPC * exposed_leading_edge_flag
     
     CLE  = CLE + 0.5* DCP_LE *np.sqrt(XLE[LE_ind])
@@ -449,6 +449,18 @@ def VLM(conditions,settings,geometry):
     BFX = -  CNC *FSIN + CAXL *FCOS
     BFY = - (CNC *FCOS + CAXL *FSIN) *SID
     BFZ =   (CNC *FCOS + CAXL *FSIN) *COD
+
+#    ######## addition test 
+#    for ii in range(len_mach):
+#        if aoa[ii] > 0.174533: # larger than 10 degrees
+#            # reduce [10:15] and [25:30] for TE vortex 
+#            BFX[ii,10:15] = 0. * BFX[ii,10:15]
+#            BFY[ii,10:15] = 0. * BFY[ii,10:15]
+#            BFZ[ii,10:15] = -(aoa[ii] * 3.3)**2 * BFZ[ii,10:15]
+#            BFX[ii,25:30] = 0. * BFX[ii,25:30]
+#            BFY[ii,25:30] = 0. * BFY[ii,25:30]
+#            BFZ[ii,25:30] = -(aoa[ii] * 3.3)**2 * BFZ[ii,25:30]
+
 
     # CONVERT CNC FROM CN INTO CNC (COEFF. *CHORD).
     CNC  = CNC  * CHORD_strip
