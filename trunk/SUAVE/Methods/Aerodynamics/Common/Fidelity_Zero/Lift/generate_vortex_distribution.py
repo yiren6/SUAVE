@@ -184,6 +184,9 @@ def generate_vortex_distribution(geometry,settings):
     VD.Z      = np.empty(shape=[0,1], dtype=precision)
     VD.Y_SW   = np.empty(shape=[0,1], dtype=precision)
     VD.DY     = np.empty(shape=[0,1], dtype=precision) 
+    # added thickness info required for MFGNN surrogate 
+    VD.ZCU     = np.empty(shape=[0,1], dtype=precision) # z-coordinate of the control point of the upper surface
+    VD.ZCL     = np.empty(shape=[0,1], dtype=precision) # z-coordinate of the control point of the lower surface
 
     # empty vectors necessary for arbitrary discretization dimensions
     VD.n_w              = 0                            # number of wings counter (refers to wings, fuselages or other structures)  
@@ -348,6 +351,12 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
     break_dihedral    = np.zeros(n_breaks)
     break_camber_xs   = [] 
     break_camber_zs   = []
+    # accept thickness infor for MFGNN surrogate
+    break_upper_zs    = []
+    break_lower_zs    = []
+    break_upper_xs    = []
+    break_lower_xs    = []
+    # end of adjustment
     break_x_offset    = np.zeros(n_breaks)
     break_z_offset    = np.zeros(n_breaks)
     break_spans       = np.zeros(n_breaks) 
@@ -385,10 +394,19 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
         if span_breaks[i_break].Airfoil: 
             airfoil_geo_data = import_airfoil_geometry(span_breaks[i_break].Airfoil.airfoil.coordinate_file) 
             break_camber_zs.append(airfoil_geo_data.camber_coordinates)
-            break_camber_xs.append(airfoil_geo_data.x_lower_surface) 
+            break_camber_xs.append(airfoil_geo_data.x_lower_surface)
+            # Store upper and lower surface data
+            break_upper_zs.append(airfoil_geo_data.y_upper_surface)
+            break_lower_zs.append(airfoil_geo_data.y_lower_surface)
+            break_upper_xs.append(airfoil_geo_data.x_upper_surface)
+            break_lower_xs.append(airfoil_geo_data.x_lower_surface)
         else:
             break_camber_zs.append(np.zeros(30))              
-            break_camber_xs.append(np.linspace(0,1,30)) 
+            break_camber_xs.append(np.linspace(0,1,30))
+            break_upper_zs.append(np.zeros(30))
+            break_lower_zs.append(np.zeros(30))
+            break_upper_xs.append(np.linspace(0,1,30))
+            break_lower_xs.append(np.linspace(0,1,30))
 
         # Get control surface leading and trailing edge cute cuts: section__cuts[-1] should never be used in the following code
         section_LE_cut[i_break] = span_breaks[i_break].cuts[0,1]
@@ -481,6 +499,9 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
         y     = np.zeros((n_cw+1)*(n_sw+1)) 
         z     = np.zeros((n_cw+1)*(n_sw+1))         
         cs_w  = np.zeros(n_sw)        
+        zcu = np.zeros(n_cw * n_sw)
+        zcl = np.zeros(n_cw * n_sw)
+
         
         # adjust origin for symmetry with special case for vertical symmetry
         wing_origin_x = wing_origin[0]
@@ -529,24 +550,40 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
             xi_ch = break_x_offset[i_break] + eta  *np.tan(break_sweep[i_break]) + x_stations[:-1]   + delta_x  *0.25 # x coordinate center of bound vortex of each panel 
             xi_c  = break_x_offset[i_break] + eta  *np.tan(break_sweep[i_break]) + x_stations[:-1]   + delta_x  *0.75 # x coordinate three-quarter chord control point for each panel
     
-            #adjust for camber-------------------------------------------------------------------------------------    
-            #format camber vars for wings vs control surface wings
-            nondim_camber_x_coords = break_camber_xs[i_break] *1
-            nondim_camber          = break_camber_zs[i_break] *1
-            if wing.is_a_control_surface: #rescale so that airfoils get cut properly
+            # adjust for camber and thickness-------------------------------------------------------------------------------------    
+            # Format camber variables for wings vs control surface wings
+            nondim_camber_x_coords = break_camber_xs[i_break] * 1
+            nondim_camber          = break_camber_zs[i_break] * 1
+            # Get nondimensional upper and lower surface coordinates
+            nondim_upper_x_coords  = break_upper_xs[i_break] * 1
+            nondim_upper_z         = break_upper_zs[i_break] * 1
+            nondim_lower_x_coords  = break_lower_xs[i_break] * 1
+            nondim_lower_z         = break_lower_zs[i_break] * 1
+
+
+            if wing.is_a_control_surface:  # rescale so that airfoils get cut properly
                 if not wing.is_slat:
                     nondim_camber_x_coords -= 1 - wing.chord_fraction
+                    nondim_upper_x_coords  -= 1 - wing.chord_fraction
+                    nondim_lower_x_coords  -= 1 - wing.chord_fraction
                 nondim_camber_x_coords /= wing.chord_fraction
                 nondim_camber          /= wing.chord_fraction
-    
-            # adjustment of coordinates for camber
-            section_camber_a  = nondim_camber*wing_chord_section_a  
-            section_camber_b  = nondim_camber*wing_chord_section_b  
-            section_camber_c  = nondim_camber*wing_chord_section             
-            
-            section_x_coord_a = nondim_camber_x_coords*wing_chord_section_a
-            section_x_coord_b = nondim_camber_x_coords*wing_chord_section_b
-            section_x_coord   = nondim_camber_x_coords*wing_chord_section
+                # Apply scaling to upper and lower surfaces
+                nondim_upper_x_coords  /= wing.chord_fraction
+                nondim_upper_z         /= wing.chord_fraction
+                nondim_lower_x_coords  /= wing.chord_fraction
+                nondim_lower_z         /= wing.chord_fraction
+
+
+            # Adjustment of coordinates for camber
+            section_camber_a = nondim_camber * wing_chord_section_a
+            section_camber_b = nondim_camber * wing_chord_section_b
+            section_camber_c = nondim_camber * wing_chord_section
+
+            section_x_coord_a = nondim_camber_x_coords * wing_chord_section_a
+            section_x_coord_b = nondim_camber_x_coords * wing_chord_section_b
+            section_x_coord   = nondim_camber_x_coords * wing_chord_section
+
     
             z_c_a1 = np.interp((x_stations_a[:-1]                 ) ,section_x_coord_a, section_camber_a) 
             z_c_ah = np.interp((x_stations_a[:-1] + delta_x_a*0.25) ,section_x_coord_a, section_camber_a)
@@ -615,6 +652,34 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
             zeta_prime_ch  = pivot_z   - np.sin(section_twist)  *(xi_ch-pivot_x)   + np.cos(-section_twist) *(zeta_ch-pivot_z)   # z coordinate transformation of center of horseshoe
             zeta_prime     = pivot_z   - np.sin(section_twist)  *(xi_c -pivot_x)   + np.cos(-section_twist) *(zeta   -pivot_z)   # z coordinate transformation of control point
             
+            # Compute chordwise positions relative to the local chord length
+            x_over_c_a = (x_stations_a[:-1] + delta_x_a * 0.75) / wing_chord_section_a
+            x_over_c_b = (x_stations_b[:-1] + delta_x_b * 0.75) / wing_chord_section_b
+            x_over_c   = (x_stations[:-1]   + delta_x   * 0.75) / wing_chord_section
+
+            # Interpolate upper surface thickness at control points
+            z_upper_a = np.interp(x_over_c_a, nondim_upper_x_coords, nondim_upper_z)
+            z_upper_b = np.interp(x_over_c_b, nondim_upper_x_coords, nondim_upper_z)
+            z_upper   = np.interp(x_over_c,   nondim_upper_x_coords, nondim_upper_z)
+
+            # Interpolate lower surface thickness at control points
+            z_lower_a = np.interp(x_over_c_a, nondim_lower_x_coords, nondim_lower_z)
+            z_lower_b = np.interp(x_over_c_b, nondim_lower_x_coords, nondim_lower_z)
+            z_lower   = np.interp(x_over_c,   nondim_lower_x_coords, nondim_lower_z)
+
+            # Compute Z-coordinates at control points before twist and dihedral
+            # For upper surface
+            zeta_upper = break_z_offset[i_break] + eta * np.tan(break_dihedral[i_break]) + z_upper
+            # For lower surface
+            zeta_lower = break_z_offset[i_break] + eta * np.tan(break_dihedral[i_break]) + z_lower
+
+            # Transform upper surface Z-coordinate with twist
+            zeta_prime_upper = pivot_z - np.sin(section_twist) * (xi_c - pivot_x) + np.cos(section_twist) * (zeta_upper - pivot_z)
+            # Transform lower surface Z-coordinate with twist
+            zeta_prime_lower = pivot_z - np.sin(section_twist) * (xi_c - pivot_x) + np.cos(section_twist) * (zeta_lower - pivot_z)
+
+
+
             # Define y-coordinate and other arrays-----------------------------------------------------------------
             # take normal value for first wing, then reflect over xz plane for a symmetric wing
             y_prime_as = (np.ones(n_cw+1)*y_a[idx_y]                 ) *sym_sign          
@@ -690,6 +755,11 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
             xc [idx_y*n_cw:(idx_y+1)*n_cw] = xi_prime        # center (true) coord of control point
             yc [idx_y*n_cw:(idx_y+1)*n_cw] = y_prime
             zc [idx_y*n_cw:(idx_y+1)*n_cw] = zeta_prime 
+            # Store upper surface Z-coordinate at control points
+            zcu[idx_y*n_cw:(idx_y+1)*n_cw] = zeta_prime_upper
+            # Store lower surface Z-coordinate at control points
+            zcl[idx_y*n_cw:(idx_y+1)*n_cw] = zeta_prime_lower
+
            
             x[idx_y*(n_cw+1):(idx_y+1)*(n_cw+1)] = xi_prime_as     # x, y, z represent all all points of the corners of the panels, LE and TE inclusive
             y[idx_y*(n_cw+1):(idx_y+1)*(n_cw+1)] = y_prime_as      # the final right corners get appended at last strip in wing, later
@@ -764,7 +834,12 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
         x   = x   + wing_origin_x  # x coordinate of control points on panel
         y   = y   + wing_origin_y  # y coordinate of control points on panel
         z   = z   + wing_origin_z  # y coordinate of control points on panel
-        
+        # Adjusting coordinate axis so reference point is at the nose of the aircraft
+        zcu = zcu + wing_origin_z  # z-coordinate of upper surface at control points
+        zcl = zcl + wing_origin_z  # z-coordinate of lower surface at control points
+
+
+
         # VD discretization information----------------------------------------------------------------------------
         
         # increment number of wings and panels
@@ -823,6 +898,9 @@ def generate_wing_vortex_distribution(VD,wing,n_cw,n_sw,spc,precision):
         VD.Z      = np.append(VD.Z    , np.array(z    , dtype=precision))         
         VD.CS     = np.append(VD.CS   , np.array(cs_w , dtype=precision)) 
         VD.DY     = np.append(VD.DY   , np.array(del_y, dtype=precision))    
+        # Append zcu and zcl to VD
+        VD.ZCU    = np.append(VD.ZCU  , np.array(zcu  , dtype=precision))
+        VD.ZCL    = np.append(VD.ZCL  , np.array(zcl  , dtype=precision))
     #End symmetry loop
     
     VD.symmetric_wings = np.append(VD.symmetric_wings, int(sym_para))
